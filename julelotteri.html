@@ -1,0 +1,1009 @@
+<!DOCTYPE html>
+<html lang="nb">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Julemessens lotteri</title>
+<script src="/shared.js"></script>
+<script src="/qr.js"></script>
+<link href="https://fonts.googleapis.com/css2?family=Alfa+Slab+One&family=Nunito:wght@600;800&display=swap" rel="stylesheet">
+<style>
+:root{--bg:#14332a;--panel:#1d453a;--ink:#f6efe0;--muted:#a9c2b6;--paper:#f2e2bf;--pink:#3a1f14;--berry:#b3262e;--gold:#e4b04b;--label:#7a5a3a;--prizec:#1d6b46;--dash:#c9b27f;--deep:#0f2a22;--edge:#3b6b5c;
+padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+*{box-sizing:border-box}
+html,body{height:100%}
+html{color-scheme:dark}
+body{margin:0;background:var(--bg);color:var(--ink);font-family:Nunito,system-ui,sans-serif;font-size:18px;line-height:1.4}
+.app{height:100%;display:grid;grid-template-rows:auto 1fr auto;gap:14px;padding:14px 18px}
+.top{display:flex;gap:12px;align-items:center;flex-wrap:wrap}
+h1{font-family:"Alfa Slab One",Georgia,serif;font-weight:400;font-size:clamp(22px,3.4vw,38px);margin:0 auto 0 0;color:var(--gold)}
+.tabs{display:flex;gap:8px}
+button,select,input,textarea{font:inherit;color:var(--ink)}
+.tabs button{padding:10px 18px;border-radius:10px;border:2px solid var(--panel);background:var(--panel);font-weight:800;cursor:pointer}
+.tabs button[aria-pressed=true]{border-color:var(--gold);background:var(--bg)}
+.mid{display:grid;grid-template-columns:1fr 340px;gap:18px;min-height:0}
+.ticket{background:var(--paper);color:var(--pink);border-radius:20px;display:flex;flex-direction:column;min-height:0;text-align:center}
+.face{flex:1;display:flex;flex-direction:column;justify-content:center;padding:12px 20px;min-height:0}
+.label{font-weight:800;color:var(--label);font-size:clamp(18px,3vh,30px)}
+.num{font-family:"Alfa Slab One",Georgia,serif;font-size:clamp(80px,26vh,320px);line-height:1.05;color:var(--berry);font-variant-numeric:tabular-nums}
+.info{font-weight:800;font-size:clamp(20px,4vh,44px)}
+.stub{border-top:4px dashed var(--dash);padding:14px 20px;min-height:25%;display:flex;flex-direction:column;justify-content:center;gap:4px}
+.prize{font-weight:800;font-size:clamp(24px,5.5vh,60px);color:var(--prizec)}
+.winner{font-size:clamp(20px,4vh,44px);font-weight:800}
+.side{background:var(--panel);border-radius:16px;padding:14px;display:flex;flex-direction:column;min-height:0}
+.side h2{margin:0 0 8px;font-size:18px}
+ol{list-style:none;margin:0;padding:0;overflow:auto;flex:1}
+li{padding:8px 6px;border-bottom:1px solid var(--bg);cursor:pointer;border-radius:6px}
+li[aria-current=true]{background:var(--bg)}
+li b{color:var(--gold)}
+li span{display:block;color:var(--muted);font-size:15px}
+.bar{display:flex;gap:10px;flex-wrap:wrap;align-items:center}
+.bar select,.bar input{padding:12px;border-radius:10px;border:2px solid var(--panel);background:var(--panel);min-width:0}
+.bar input{flex:1;min-width:180px}
+.go{padding:14px 36px;font-size:24px;font-weight:800;border:0;border-radius:12px;background:var(--berry);color:#fff;cursor:pointer}
+.go:disabled{opacity:.5;cursor:default}
+.ghost{padding:11px 14px;border-radius:10px;border:2px solid var(--muted);background:none;cursor:pointer}
+:focus-visible{outline:3px solid var(--gold);outline-offset:2px}
+.drawer{position:fixed;top:0;right:0;bottom:0;width:min(440px,100%);background:var(--deep);padding:20px;padding-top:calc(20px + env(safe-area-inset-top,0px));overflow:auto;box-shadow:-8px 0 30px #0008;z-index:5}
+.drawer[hidden]{display:none}
+.drawer h2{margin:18px 0 6px;font-size:18px;color:var(--gold)}
+.f3{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
+.f2{display:grid;grid-template-columns:repeat(2,1fr);gap:8px}
+.drawer label{font-size:15px;color:var(--muted)}
+.drawer input,.drawer textarea{width:100%;margin-top:3px;padding:9px;border-radius:8px;border:2px solid var(--panel);background:var(--panel)}
+textarea{min-height:130px;resize:vertical}
+.hint{color:var(--muted);font-size:14px;margin:4px 0 0}
+.drawer{width:min(620px,100%)}
+.tbs{max-height:300px;overflow:auto;margin-bottom:8px}
+table.tb{width:100%;border-collapse:collapse}
+.tb td{padding:3px 4px}.tb td:first-child{width:96px;color:var(--muted);font-size:15px}.tb td:last-child{width:44px}
+.tb input{margin-top:0}.tb .x{padding:6px 10px}
+.drawer .tbs{max-height:min(52vh,480px)}
+.pg{display:flex;gap:8px;align-items:center;margin:8px 0}.pg span{flex:1;text-align:center;font-weight:800;font-size:19px}
+.tb{border:1px solid #8b9792;background:#fff}
+.tb td,.tb th{border:1px solid #b9c2bd;padding:0}
+.tb th{position:sticky;top:0;z-index:1;background:#d5ddd9;color:#1b2a24;font-weight:800;font-size:14px;padding:6px 8px;text-align:left}
+.tb td:first-child{background:#e6ece9;color:#1b2a24;font-size:14px;font-weight:700;padding:5px 8px;white-space:nowrap}
+.tb td input{background:#fff;color:#111;border:0;border-radius:0;padding:7px 8px;margin:0}
+.tb tr:nth-child(even) td input{background:#f3f7f5}
+.tb td input:focus{outline:2px solid #1d6b46;outline-offset:-2px;background:#fffbe6}
+#ntb td:first-child{width:130px}#ntb td:last-child{width:auto}
+#ptb td:first-child{width:110px}#ptb td:last-child{width:46px;background:var(--deep);border:0;padding:0 0 0 6px}
+.view .bar,.view .tabs,.view #left,.only .bar,.only .tabs,.only #left{display:none}.view .app,.only .app{grid-template-rows:auto 1fr}#back{position:fixed;right:12px;bottom:calc(12px + env(safe-area-inset-bottom,0px));opacity:.25;z-index:4;background:var(--bg)}#back:hover,#back:focus-visible{opacity:1}#fsv{position:fixed;right:12px;bottom:calc(12px + env(safe-area-inset-bottom,0px));opacity:.3;z-index:4;background:var(--bg)}#fsv:hover,#fsv:focus-visible{opacity:1}#fsv[hidden]{display:none}
+@media(max-width:820px){.mid{grid-template-columns:1fr;grid-auto-rows:minmax(0,auto)}.app{height:auto;min-height:100%}.ticket{min-height:420px}.side{max-height:280px}}
+.drawer{top:12px;right:12px;bottom:12px;left:12px;width:auto;border-radius:16px;padding:12px 20px 16px;padding-top:calc(12px + env(safe-area-inset-top,0px));box-shadow:0 0 0 100vmax #000a}
+.dh{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:10px}
+.dh h2{margin:0;font-size:26px}
+.dg{display:grid;grid-template-columns:repeat(auto-fit,minmax(340px,1fr));gap:16px;align-items:start}
+.col{display:grid;gap:14px;min-width:0}
+.card{background:var(--panel);border-radius:12px;padding:12px 14px}
+.card h2{margin:0 0 8px}
+.card input,.card textarea{background:var(--deep);border-color:var(--edge)}
+.drawer .tbs{max-height:calc(100vh - 400px);min-height:180px}
+.drawer{font-size:15px;display:flex;flex-direction:column;padding:10px 16px 12px;padding-top:calc(10px + env(safe-area-inset-top,0px))}
+.dh{margin-bottom:8px}.dh h2{font-size:20px}
+.dg{flex:1;min-height:0;gap:12px;align-items:stretch;grid-template-columns:repeat(3,minmax(0,1fr))}
+.col{gap:10px;min-height:0;overflow:auto;align-content:start}
+.col:nth-child(n+2){display:flex;flex-direction:column;overflow:hidden}
+.card{padding:9px 11px}
+.card h2{font-size:15px;margin:0 0 6px}
+.drawer label,.drawer .hint{font-size:13px}
+.drawer .hint{margin:3px 0 0}
+.drawer .ghost{padding:6px 10px;font-size:14px}
+.drawer input,.drawer textarea{padding:6px 8px;font-size:14px;margin-top:2px}
+.drawer textarea{min-height:44px!important}
+.drawer p{margin:6px 0}
+.tb td input{padding:4px 8px;font-size:14px}
+.tb td:first-child,.tb th{font-size:13px;padding:3px 8px}
+.pg{margin:4px 0}.pg span{font-size:16px}
+.card.grow{flex:1;min-height:0;display:flex;flex-direction:column}
+.drawer .card.grow .tbs{flex:1;max-height:none;min-height:120px;margin-bottom:6px}
+@media(max-width:1000px){.dg{display:block;overflow:auto}.col,.col:nth-child(n+2){display:grid;overflow:visible;margin-bottom:12px}.card.grow{display:block}.drawer .card.grow .tbs{max-height:320px}}
+.card[hidden]{display:none!important}
+html[data-theme=rod]{--bg:#4e0f1e;--panel:#721a2d;--ink:#fbf1e6;--muted:#e6bcc3;--paper:#fbf3e4;--pink:#3b1a14;--berry:#b3122c;--gold:#f2c14e;--label:#8a5a3a;--prizec:#1f6b3c;--dash:#d8c3a0;--deep:#35091a;--edge:#a04055}
+html[data-theme=natt]{--bg:#0d1d38;--panel:#17305a;--ink:#eef4ff;--muted:#a8bddb;--paper:#eef4fb;--pink:#10243f;--berry:#1a56a5;--gold:#f5d36b;--label:#51698f;--prizec:#1f7a54;--dash:#b0c2dc;--deep:#081326;--edge:#3d5f94}
+html[data-theme=lys]{color-scheme:light;--bg:#f4efe4;--panel:#ffffff;--ink:#26302b;--muted:#66706a;--paper:#fffdf6;--pink:#26302b;--berry:#b3262e;--gold:#a85a12;--label:#7a5a3a;--prizec:#1d6b46;--dash:#cdbf9f;--deep:#ebe4d3;--edge:#bfb39a}
+.ticket{box-shadow:0 8px 28px #0005;position:relative}
+.ticket::before{content:"";position:absolute;inset:10px;border:3px solid var(--dash);border-radius:14px;pointer-events:none;opacity:.7}
+.tabs button{border-radius:999px}
+.go{border-radius:999px;box-shadow:0 4px 0 #0004}
+#ptb td:first-child{width:128px;user-select:none}
+#ntb{min-width:660px}
+#ntb td{position:relative}
+.fh{position:absolute;right:0;bottom:0;width:11px;height:11px;background:#1d6b46;border:2px solid #fff;cursor:crosshair;z-index:2}
+#ntb td.fillsel input{background:#fff3b0}
+#nmax,#pmax{float:right}
+.card.max{position:fixed;top:12px;left:12px;right:12px;bottom:12px;z-index:30;box-shadow:0 0 0 100vmax #000b;padding:14px 18px}
+.card.max h2{font-size:20px}
+.card.max .tb td input{font-size:17px;padding:7px 10px}
+.card.max .tb td:first-child,.card.max .tb th{font-size:15px}
+.card.max #ntb{min-width:0}
+.card.max{padding:10px 14px}
+.card.max h2{font-size:17px;margin:0 0 4px}
+.card.max .tb td input{font-size:15px;padding:3px 8px}
+.card.max .tb td:first-child,.card.max .tb th{font-size:14px;padding:3px 8px}
+.card.max #nhint,.card.max .nbot{display:none}
+.tbs.multi{display:flex;gap:12px;align-items:flex-start}
+.tbs.multi table{flex:1;min-width:0}
+.tbs.multi .tb td:first-child{width:84px!important}
+.tbs.multi .tb td:nth-child(3){width:100px!important}
+.tbs.multi .tb td:nth-child(4){width:150px!important}
+.card.max .tb th{height:24px;padding:0 8px;font-size:13px;line-height:1}
+.card.max .tb td{height:var(--rh,26px);padding:0}
+.card.max .tb td:first-child{padding:0 8px;font-size:13px;line-height:1}
+.card.max .tb td input{height:var(--rh,26px);padding:0 8px;font-size:var(--fs,15px);line-height:1}
+.card.max .pg{margin:2px 0}
+.card.max .pg .ghost{padding:3px 10px}
+#ntb td.rsel,#ntb td.rsel input{background:#cfe3ff}
+.sdlg{position:fixed;inset:0;background:#000b;z-index:40;display:flex;align-items:flex-start;justify-content:center;padding:6vh 16px}
+.sdlg[hidden]{display:none}
+.sbox{background:var(--deep);border:2px solid var(--edge);border-radius:14px;padding:14px 18px;width:min(760px,100%);max-height:86vh;overflow:auto}
+.sbox input{width:100%;padding:10px;font-size:18px;border-radius:8px;border:2px solid var(--edge);background:var(--panel)}
+#sres .r{padding:9px 0;border-bottom:1px solid var(--edge)}
+#sres .t{font-weight:800;color:var(--gold)}
+#sres .s{color:var(--muted);font-size:15px}
+#nmax,#pmax{align-self:flex-end}
+.chip{font-size:14px;font-weight:800;padding:4px 10px;border-radius:999px;background:var(--panel);color:var(--muted)}
+.chip.ok{color:#9be3b2}.chip.bad{background:#7a1f1f;color:#fff}
+.view #srv,.only #srv{display:none}
+@keyframes jlflash{from{background:#fff3b0}to{background:transparent}}
+.tb td input.flash{animation:jlflash 1.6s ease-out}
+</style>
+</head>
+<body>
+<div class="app">
+<div class="top">
+<h1>Julemessens lotteri</h1>
+<span id="srv" class="chip" hidden></span>
+<div class="tabs" role="group" aria-label="Type trekning">
+<button data-m="ticket">Loddbøker: lodd</button>
+<button data-m="book">Loddbøker: bok</button>
+<button data-m="ares">Åresalg</button>
+</div>
+</div>
+
+<div class="mid">
+<section class="ticket" aria-live="polite">
+<div class="face"><div class="label" id="lbl"></div><div class="num" id="num">?</div><div class="info" id="info"></div></div>
+<div class="stub"><div class="prize" id="prize"></div><div class="winner" id="winner"></div></div>
+</section>
+<section class="side">
+<h2 id="hh"></h2>
+<ol id="hist"></ol>
+<p class="hint" id="left"></p>
+</section>
+</div>
+
+<div class="bar">
+<select id="psel" aria-label="Gevinst"></select>
+<input id="pfree" placeholder="Gevinst (skriv inn)" aria-label="Gevinst" autocomplete="off" hidden>
+<button class="go" id="go">Trekk</button>
+<button class="ghost" id="absent">Ikke til stede, trekk på nytt</button>
+<input id="wname" placeholder="Hvem vant? Skriv navn her" aria-label="Navn på vinner" autocomplete="off">
+<button class="ghost" id="more">Tlf og adresse</button>
+<input id="wtel" placeholder="Telefon" aria-label="Telefon" autocomplete="off" hidden>
+<input id="wadr" placeholder="Adresse" aria-label="Adresse" autocomplete="off" hidden>
+<button class="ghost" id="srch">Søk</button>
+<button class="ghost" id="qrb">QR til mobil</button>
+<button class="ghost" id="undo">Angre trekk</button>
+<button class="ghost" id="redo" hidden>Gjenopprett slettet trekning</button>
+<button class="ghost" id="set">Innstillinger</button>
+<button class="ghost" id="pop">Åpne skjermvisning</button>
+<button class="ghost" id="only">Kun visning</button>
+<button class="ghost" id="fs">Fullskjerm</button>
+</div>
+</div>
+
+<button class="ghost" id="back" hidden>Vis styring</button>
+<button class="ghost" id="fsv" hidden>Fullskjerm (F)</button>
+<div class="sdlg" id="qrdlg" hidden>
+<div class="sbox" role="dialog" aria-label="QR-kode til mobil" style="text-align:center;max-width:520px">
+<div class="dh"><h2>Send bilde fra mobil</h2><button class="ghost" id="qrclose">Lukk</button></div>
+<div id="qrbody"></div>
+</div>
+</div>
+<div class="sdlg" id="sdlg" hidden>
+<div class="sbox" role="dialog" aria-label="Søk">
+<div class="dh"><h2>Søk</h2><button class="ghost" id="sclose">Lukk</button></div>
+<input id="sq" placeholder="Bok og nummer (f.eks. 7 23), bare nummer, eller navn" autocomplete="off" aria-label="Søk">
+<div id="sres"></div>
+</div>
+</div>
+<aside class="drawer" id="drawer" hidden aria-label="Innstillinger">
+<div class="dh"><h2>Innstillinger</h2><button class="ghost" id="close">Lukk</button></div>
+<div class="dg">
+<div class="col">
+<section class="card">
+<h2>Tittel</h2>
+<label>Overskrift som vises på skjermen<input id="title" type="text" placeholder="Julemessens lotteri"></label>
+<label style="display:block;margin-top:8px">Fargetema<select id="theme" style="width:100%;margin-top:2px;padding:6px 8px;border-radius:8px;border:2px solid var(--edge);background:var(--deep);color:var(--ink);font:inherit"><option value="klassisk">Klassisk jul (grønn og gull)</option><option value="rod">Rød jul</option><option value="natt">Vinternatt (blå)</option><option value="lys">Lys</option></select></label>
+</section>
+<section class="card">
+<h2>Loddbøker</h2>
+<div class="f3">
+<label>Antall bøker<input id="books" type="number" min="1"></label>
+<label>Lodd per bok<input id="per" type="number" min="1"></label>
+<label>Første nummer<input id="start" type="number" min="0"></label>
+</div>
+<label style="display:block;margin-top:10px;color:var(--ink)"><input type="checkbox" id="local" style="width:auto;margin:0 8px 0 0">Hver bok er nummerert fra 1 (f.eks. 1–50 i hver bok)</label>
+<p class="hint" id="bsum"></p>
+</section>
+<section class="card">
+<h2>Åresalg</h2>
+<div class="f2">
+<label>Fra nummer<input id="aFrom" type="number" min="0"></label>
+<label>Til nummer<input id="aTo" type="number" min="0"></label>
+</div>
+</section>
+<section class="card" id="srvcard" hidden>
+<h2>Registrering fra flere PC-er og mobil</h2>
+<p class="hint">Åpne en av disse adressene i nettleseren på de andre PC-ene (samme nettverk). Navnene du skriver der dukker opp her med en gang.</p>
+<div id="srvurls" style="font-weight:800;margin-top:6px;word-break:break-all"></div>
+<div style="display:flex;gap:12px;align-items:center;margin-top:10px">
+<div id="srvqr" style="width:150px;height:150px;background:#fff;border-radius:8px;padding:4px;flex:none" aria-label="QR-kode til mobilsiden"></div>
+<div><p class="hint" style="margin:0">Skann med mobilen (samme wifi) for å sende bilde av et ark til PC-en.</p>
+<select id="srvsel" aria-label="Adresse i QR-koden" style="margin-top:6px;width:100%"></select>
+<p class="hint" id="srvfoto" style="margin-top:6px"></p></div></div>
+</section>
+<section class="card">
+<h2>Egen skjerm for salen</h2>
+<p class="hint">Trykk «Åpne skjermvisning» i knappelinjen. Dra det nye vinduet over til skjerm 2 og trykk F eller dobbeltklikk for fullskjerm. Her på skjerm 1 styrer du, og salen ser bare skjerm 2.</p>
+<p class="hint">Snarveier: mellomrom eller Enter trekker, F gir fullskjerm, V skjuler eller viser styringen.</p>
+</section>
+<section class="card">
+<h2>Lagre til fil (CSV)</h2>
+<button class="ghost" id="dl">Last ned CSV</button>
+<button class="ghost" id="pick">Velg fil for autolagring</button>
+<p class="hint" id="csvmsg">CSV-filen åpnes i Excel. Med autolagring skrives alle trekninger til filen du velger hver gang noe endres (Chrome og Edge).</p>
+</section>
+<section class="card">
+<h2>Nullstill</h2>
+<button class="ghost" id="resettab">Slett trekninger i denne fanen</button>
+<p class="hint">Åresalg: start en ny runde når du skal trekke med nye nummer. Tidligere runder blir med i CSV-filen.</p>
+<button class="ghost" id="newround">Ny åresalgsrunde</button>
+<p class="hint">Sletter trekninger i alle faner, også loddbøkene:</p>
+<button class="ghost" id="reset">Slett alle trekninger</button>
+</section>
+</div>
+<div class="col">
+<section class="card grow" id="pcard">
+<button class="ghost" id="pmax">⤢ Maksimer</button>
+<h2>Gevinster</h2>
+<div class="tbs"><table class="tb" id="ptb"></table></div>
+<p class="hint">Dra i ☰ for å flytte en gevinst. Øverste gevinst foreslås først. Alt + pil opp/ned virker også.</p>
+<button class="ghost" id="padd">+ Legg til gevinst</button>
+<p><label for="ppaste">Eller lim inn en liste med gevinster, én per linje (gjerne rett fra Excel):</label>
+<textarea id="ppaste" style="min-height:70px"></textarea></p>
+<button class="ghost" id="pimp">Legg listen til</button> <button class="ghost" id="pclr">Tøm alle gevinster</button>
+</section>
+</div>
+<div class="col">
+<section class="card grow" id="ncard">
+<button class="ghost" id="nmax">⤢ Maksimer</button>
+<h2 id="nh">Hvem har nummeret?</h2>
+<p class="hint" id="nhint"></p>
+<div class="pg"><button class="ghost" id="gprev" aria-label="Forrige bok">◀</button><span id="glabel"></span><input id="gnum" type="number" min="1" aria-label="Gå til bok" style="width:84px"><button class="ghost" id="gnext" aria-label="Neste bok">▶</button></div>
+<div class="tbs"><table class="tb" id="ntb"></table></div>
+<button id="nadd" hidden></button>
+<div class="nbot">
+<p><label for="npaste">Eller lim inn en liste fra Excel (nummer, navn, evt. telefon og adresse. For bok: bok, nr i boka, navn, evt. telefon og adresse. Skilt med tab eller semikolon):</label>
+<textarea id="npaste" style="min-height:70px"></textarea></p>
+<button class="ghost" id="nimp">Legg listen til i tabellen</button>
+<p><button class="ghost" id="clrpage">Tøm valgt bok/side</button> <button class="ghost" id="clrall">Tøm hele listen (denne fanen)</button></p>
+<p class="hint">Tabellen gjelder fanen du har valgt. Når noe trekkes, fylles navnet inn automatisk hvis det står i tabellen.</p>
+</div>
+</section>
+<section class="card" id="acard" hidden>
+<h2>Åresalg</h2>
+<p class="hint">Åresalg bruker ingen lister. Etter hver trekning skriver du gevinst og navn rett i feltene nederst på hovedsiden. Gevinstlisten til venstre gjelder bare loddbøkene.</p>
+</section>
+</div>
+</div>
+</aside>
+
+<script>
+(function(){
+var KEY="julelotteri-v2";
+var D={books:20,per:25,start:1,aFrom:1,aTo:200,mode:"book",local:true,title:"Julemessens lotteri",theme:"klassisk",round:1,prizes:[],tbl:{ticket:[],book:[],ares:[]},drawn:[],nid:1};
+var st=D;
+try{var s=JSON.parse(localStorage.getItem(KEY));if(s&&s.drawn){st=Object.assign({},D,s);st.tbl=Object.assign({ticket:[],book:[],ares:[]},s.tbl);
+if(s.names)["ticket","book","ares"].forEach(function(m){if(!st.tbl[m].length&&s.names[m])s.names[m].split("\n").forEach(function(l){var mt=l.trim().match(/^(\d+)[\s;,:\t-]+(.+)$/);if(mt)st.tbl[m].push({k:+mt[1],v:mt[2].trim()})})})}}catch(e){}
+var $=function(i){return document.getElementById(i)};
+var busy=false,sel=null,choice=-2,rolling=null,rtimer=null;
+var view=location.hash==="#visning",ch=null;
+if(view)document.body.classList.add("view");
+try{ch=new BroadcastChannel("julelotteri")}catch(e){}
+function live(x){if(view)return;try{localStorage.setItem(KEY+"-live",JSON.stringify(Object.assign({st:st,sel:sel,rolling:!!rolling,ts:Date.now()},x||{})))}catch(e){}}
+var room=null;
+function emitRoom(t,d){if(room){try{room.emit(t,d).catch(function(){})}catch(e){}}}
+function pack(){var m=st.mode,pr={};var l=ofMode(m).map(function(d){if(d.pi>=0)pr[d.pi]=st.prizes[d.pi];return{id:d.id,n:d.n,k:d.k,pi:d.pi,pt:d.pt||"",ab:d.absent?1:0,winner:d.winner||""}});var p={title:st.title,theme:st.theme,local:st.local,m:m,start:st.start,per:st.per,books:st.books,aFrom:st.aFrom,aTo:st.aTo,l:l,pr:pr,sel:sel,rolling:!!rolling};while(JSON.stringify(p).length>3800&&p.l.length>1)p.l.shift();return p}
+function applyPack(p){st=Object.assign({},D,{title:p.title,theme:p.theme,local:p.local,mode:p.m,start:p.start,per:p.per,books:p.books,aFrom:p.aFrom,aTo:p.aTo,drawn:p.l.map(function(d){return{id:d.id,mode:p.m,n:d.n,k:d.k,pi:d.pi,pt:d.pt,absent:!!d.ab,winner:d.winner}}),prizes:Object.keys(p.pr).reduce(function(a,k){a[k]=p.pr[k];return a},[])});sel=p.sel;rolling=p.rolling?true:null;render()}
+function sync(){if(view)return;live();emitRoom("state",pack());toPop("state",pack());if(ch)ch.postMessage({t:"state",st:st,sel:sel,rolling:!!rolling})}
+if(ch)ch.onmessage=function(ev){var m=ev.data;
+ if(view){
+  if(m.t==="state"){st=Object.assign({},D,m.st);sel=m.sel;rolling=m.rolling?true:null;render()}
+  else if(m.t==="roll"){$("num").textContent=m.n}
+ }else if(m.t==="hello")sync();
+};
+if(view&&ch)ch.postMessage({t:"hello"});
+var TXT={ticket:"Vinnerlodd",book:"Vinnerbok",ares:"Vinnernummer"};
+function save(){try{localStorage.setItem(KEY,JSON.stringify(st))}catch(e){}autosave();srvAfterSave()}
+function lastTicket(){return st.start+st.books*st.per-1}
+function bookOf(n){return Math.floor((n-st.start)/st.per)+1}
+function bookRange(b){var a=st.start+(b-1)*st.per;return[a,a+st.per-1]}
+function ofMode(m){return st.drawn.filter(function(d){return d.mode===m&&(m!=="ares"||(d.rd||1)===(st.round||1))})}
+function pool(m){
+ var u=new Set(ofMode(m).map(function(d){return m==="book"&&d.k?(d.n-1)*st.per+d.k-1:d.n})),a,b,p=[],i;
+ if(m==="ticket"){a=st.start;b=lastTicket()}else if(m==="book"){a=0;b=st.books*st.per-1}else{a=st.aFrom;b=st.aTo}
+ for(i=a;i<=b;i++)if(!u.has(i))p.push(i);
+ return p;
+}
+function lookup(m,n,p){return(st.tbl[m]||[]).filter(function(r){return r.k===n&&r.v&&(m!=="book"||!r.p||r.p===p)}).map(function(r){return r.v}).join(", ")}
+function prizesLeft(){
+ var u=new Set(st.drawn.filter(function(d){return!d.absent}).map(function(d){return d.pi})),r=[];
+ st.prizes.forEach(function(p,i){if(p&&!u.has(i))r.push(i)});return r;
+}
+function rnd(n){if(window.crypto&&crypto.getRandomValues){var a=new Uint32Array(1);crypto.getRandomValues(a);return a[0]%n}return Math.floor(Math.random()*n)}
+function entry(id){return st.drawn.filter(function(d){return d.id===id})[0]}
+function posOf(n){return((n-st.start)%st.per+st.per)%st.per+1}
+function infoOf(e){
+ if(e.mode==="ticket")return"Loddbok "+bookOf(e.n)+", nr "+posOf(e.n)+" i boka";
+ if(e.mode==="book")return e.k?"Nr "+e.k+" i boka":"";
+ return"";
+}
+function showStub(e){
+ var pz=e&&!e.absent?(e.pt||(e.pi>=0&&st.prizes[e.pi]?st.prizes[e.pi]:"")):"";$("prize").textContent=pz?"Gevinst: "+pz:"";
+ $("winner").textContent=e&&e.absent?"Ikke til stede":(e&&e.winner?"Vinner: "+e.winner:"");
+}
+function applyTitle(){document.documentElement.setAttribute("data-theme",st.theme||"klassisk");var t=(st.title||"").trim()||"Julemessens lotteri";document.querySelector("h1").textContent=t;document.title=t}
+function applyLocal(){
+ var tb=document.querySelector('.tabs button[data-m="ticket"]'),bb=document.querySelector('.tabs button[data-m="book"]');
+ tb.hidden=!!st.local;tb.textContent="Loddbøker: fortløpende";bb.textContent=st.local?"Loddbøker":"Loddbøker: bok";
+ if(st.local&&st.mode==="ticket"){st.mode="book";gp=1;sel=null}
+}
+function render(){
+ applyTitle();if(!view)applyLocal();
+ var m=st.mode,list=ofMode(m),e=sel?entry(sel):null;
+ if(!e||e.mode!==m){e=list[list.length-1]||null;sel=e?e.id:null}
+ document.querySelectorAll(".tabs button").forEach(function(b){b.setAttribute("aria-pressed",b.dataset.m===m)});
+ $("lbl").textContent=TXT[m];
+ if(!rolling){$("num").textContent=e?e.n:"?";$("info").textContent=e?infoOf(e):(view?"Klar for trekning":"Trykk Trekk for å starte")}else if(view)$("info").textContent="Trekker…";
+ showStub(rolling?null:e);
+ $("hh").textContent="Trukket så langt ("+list.length+")"+(m==="ares"&&(st.round||1)>1?" – runde "+st.round:"");
+ var h=$("hist");h.innerHTML="";
+ list.slice().reverse().forEach(function(d,i){
+  var li=document.createElement("li"),b=document.createElement("b"),sp=document.createElement("span");
+  b.textContent=(list.length-i)+". "+(m==="book"?"Bok "+d.n+(d.k?", nr "+d.k:""):"Nr "+d.n);
+  var t=[];if(m==="ticket")t.push("bok "+bookOf(d.n)+", nr "+posOf(d.n));if(d.absent)t.push("ikke til stede");else if(d.pt)t.push(d.pt);else if(d.pi>=0&&st.prizes[d.pi])t.push(st.prizes[d.pi]);if(d.winner)t.push(d.winner);
+  sp.textContent=t.join(", ");li.appendChild(b);li.appendChild(sp);if(d.absent){li.style.opacity=".6";b.style.textDecoration="line-through"}
+  if(e&&d.id===e.id)li.setAttribute("aria-current","true");
+  li.onclick=function(){sel=d.id;render()};h.appendChild(li);
+ });
+ var pl=pool(m).length;
+ $("left").textContent=pl+(m==="book"?" lodd":" nummer")+" gjenstår. Trykk på en trekning for å skrive inn vinner.";
+ var left=prizesLeft();
+ if(choice!==-1&&left.indexOf(choice)<0)choice=left.length?left[0]:-1;
+ var ps=$("psel");ps.innerHTML="";
+ left.forEach(function(i){var o=document.createElement("option");o.value=i;o.textContent="Gevinst: "+st.prizes[i];ps.appendChild(o)});
+ var o=document.createElement("option");o.value=-1;o.textContent="Uten gevinst";ps.appendChild(o);
+ ps.value=choice;
+ if(document.activeElement!==$("wname"))$("wname").value=e?e.winner||"":"";
+ $("wname").disabled=!e;
+ var ar=m==="ares";$("psel").hidden=ar;$("pfree").hidden=!ar;$("ncard").hidden=ar;$("acard").hidden=!ar;
+ if(document.activeElement!==$("pfree"))$("pfree").value=e?e.pt||"":"";
+ $("pfree").disabled=!e;
+ $("wtel").disabled=!e;$("wadr").disabled=!e;
+ if(document.activeElement!==$("wtel"))$("wtel").value=e?e.tel||"":"";
+ if(document.activeElement!==$("wadr"))$("wadr").value=e?e.adr||"":"";
+ $("go").disabled=busy||pl===0;sync();
+ $("go").textContent=pl===0?"Alt er trukket":"Trekk";
+ $("bsum").textContent=st.local?st.books+" bøker med "+st.per+" lodd i hver ("+(st.books*st.per)+" lodd totalt). Nummer 1 til "+st.per+" i hver bok.":st.books+" bøker med "+st.per+" lodd: nummer "+st.start+" til "+lastTicket()+" ("+(st.books*st.per)+" lodd)";
+}
+function draw(){
+ if(busy||view)return;var m=st.mode,p=pool(m);if(!p.length)return;
+ var win=p[rnd(p.length)],pi=parseInt($("psel").value,10);if(isNaN(pi)||m==="ares")pi=-1;
+ busy=true;rolling=true;sync();$("go").disabled=true;$("info").textContent="Trekker…";$("prize").textContent="";$("winner").textContent="";
+ var reduce=window.matchMedia&&matchMedia("(prefers-reduced-motion: reduce)").matches,i=0,steps=reduce?1:26;
+ rtimer=setInterval(function(){
+  i++;
+  if(i>=steps){
+   clearInterval(rtimer);rolling=null;busy=false;
+   var bn=win,kk=null;if(m==="book"){bn=Math.floor(win/st.per)+1;kk=win%st.per+1}
+   var e={id:st.nid++,mode:m,n:bn,k:kk,pi:pi,winner:lookup(m,bn,kk),tel:lookupX(m,bn,kk,"tel"),adr:lookupX(m,bn,kk,"adr"),t:Date.now(),rd:st.round||1,pt:(m==="ares"?carryPt:"")};
+   st.drawn.push(e);sel=e.id;choice=-2;carryPt="";undone=null;$("redo").hidden=true;save();render();
+  }else{var v=p[rnd(p.length)];if(m==="book")v=Math.floor(v/st.per)+1;$("num").textContent=v;if(ch)ch.postMessage({t:"roll",n:v});emitRoom("roll",v);toPop("roll",v);live({num:v})}
+ },reduce?0:70);
+}
+function num(id,min){var v=parseInt($(id).value,10);return isNaN(v)||v<min?null:v}
+function readCfg(){
+ var b=num("books",1),p=num("per",1),s=num("start",0),a=num("aFrom",0),z=num("aTo",0);
+ if(b!==null)st.books=b;if(p!==null)st.per=p;if(s!==null)st.start=s;
+ if(a!==null)st.aFrom=a;if(z!==null&&z>=st.aFrom)st.aTo=z;drawNames();
+ save();render();
+}
+function fillSettings(){
+ $("books").value=st.books;$("per").value=st.per;$("start").value=st.start;
+ $("aFrom").value=st.aFrom;$("aTo").value=st.aTo;$("local").checked=!!st.local;$("title").value=st.title||"";$("theme").value=st.theme||"klassisk";drawPrizes();drawNames();
+}
+document.querySelectorAll(".tabs button").forEach(function(b){b.onclick=function(){
+ if(busy)return;st.mode=b.dataset.m;gp=1;sel=null;save();fillSettings();render()}});
+$("go").onclick=draw;
+$("psel").onchange=function(){choice=parseInt($("psel").value,10)};
+$("pfree").oninput=function(){var e=sel&&entry(sel);if(e){e.pt=$("pfree").value;save();render()}};
+$("wname").oninput=function(){var e=sel&&entry(sel);if(e){e.winner=$("wname").value;save();render()}};
+var undone=null;
+twoStep("undo","Angre trekk",function(){
+ if(busy)return;var l=ofMode(st.mode),e=l[l.length-1];
+ if(e){undone={e:e,i:st.drawn.indexOf(e)};st.drawn.splice(undone.i,1);sel=null;choice=-2;$("redo").hidden=false;save();render()}
+},"Fjerne siste trekning? Trykk igjen");
+$("redo").onclick=function(){if(undone){st.drawn.splice(Math.min(undone.i,st.drawn.length),0,undone.e);sel=undone.e.id;undone=null;$("redo").hidden=true;save();render()}};
+$("set").onclick=function(){fillSettings();$("drawer").hidden=false};
+$("close").onclick=function(){$("drawer").hidden=true;render()};
+["books","per","start","aFrom","aTo"].forEach(function(i){$(i).onchange=readCfg});
+function mk(t){return document.createElement(t)}
+function xbtn(label,fn){var x=mk("button");x.textContent="✕";x.className="ghost x";x.title=label;x.setAttribute("aria-label",label);x.onclick=fn;return x}
+
+$("padd").onclick=function(){st.prizes.push("");save();drawPrizes();var q=$("ptb").querySelectorAll("input");if(q.length)q[q.length-1].focus()};
+
+$("nadd").onclick=function(){
+ var rows=st.tbl[st.mode],l=rows[rows.length-1];
+ rows.push(st.mode==="book"?{k:l&&!isNaN(l.k)?l.k:1,p:l&&l.p?l.p+1:1,v:""}:{k:l&&!isNaN(l.k)?l.k+1:(st.mode==="ares"?st.aFrom:st.start),v:""});
+ save();drawNames();var q=$("ntb").querySelectorAll("input");q[q.length-1].focus();
+};
+var gp=1;
+function nm(m,k,p){var rows=st.tbl[m],i,r;for(i=0;i<rows.length;i++){r=rows[i];if(r.k===k&&(m!=="book"||(r.p||null)===(p||null)))return r}return null}
+function gpages(){return st.mode==="ares"?Math.max(1,Math.ceil((st.aTo-st.aFrom+1)/50)):st.books}
+
+function twoStep(id,label,fn,ask){var t=null,t0=0,b=$(id);b.onclick=function(){if(t&&Date.now()-t0<600)return;if(t){clearTimeout(t);t=null;b.textContent=label;fn();return}b.textContent=ask||"Sikker? Trykk igjen";t0=Date.now();t=setTimeout(function(){t=null;b.textContent=label},4000)}}
+twoStep("clrpage","Tøm valgt bok/side",function(){
+ var m=st.mode,lo,hi;
+ if(m==="book"){lo=gp;hi=gp}else if(m==="ticket"){lo=st.start+(gp-1)*st.per;hi=lo+st.per-1}else{lo=st.aFrom+(gp-1)*50;hi=lo+49}
+ st.tbl[m]=st.tbl[m].filter(function(r){return!(r.k>=lo&&r.k<=hi)});srvOps([{op:"del",m:m,lo:lo,hi:hi}]);save();drawNames();
+});
+twoStep("clrall","Tøm hele listen (denne fanen)",function(){st.tbl[st.mode]=[];srvOps([{op:"del",m:st.mode,all:true}]);save();drawNames()});
+$("theme").onchange=function(){st.theme=$("theme").value;save();render()};
+$("title").oninput=function(){st.title=$("title").value;save();render()};
+$("local").onchange=function(){st.local=$("local").checked;gp=1;save();fillSettings();render()};
+function movePrize(from,to){
+ if(from===to||from<0||to<0||to>=st.prizes.length)return;
+ var order=st.prizes.map(function(_,i){return i}),x=order.splice(from,1)[0],map={};
+ order.splice(to,0,x);
+ order.forEach(function(o,n){map[o]=n});
+ st.prizes=order.map(function(i){return st.prizes[i]});
+ st.drawn.forEach(function(d){if(d.pi>=0&&map[d.pi]!==undefined)d.pi=map[d.pi]});
+ choice=-2;save();drawPrizes();render();
+}
+function drawPrizes(){
+ var t=$("ptb"),dragFrom=-1;t.innerHTML="";
+ function clearMarks(){for(var r=0;r<t.rows.length;r++)t.rows[r].style.outline=""}
+ st.prizes.forEach(function(p,i){
+  var tr=mk("tr"),a=mk("td"),b=mk("td"),c=mk("td"),inp=mk("input");
+  a.textContent="☰ Gevinst "+(i+1);a.draggable=true;a.style.cursor="grab";a.title="Dra for å flytte";
+  a.ondragstart=function(ev){dragFrom=i;ev.dataTransfer.effectAllowed="move";try{ev.dataTransfer.setData("text/plain",String(i))}catch(e){}tr.style.opacity=".5"};
+  a.ondragend=function(){dragFrom=-1;tr.style.opacity="";clearMarks()};
+  tr.ondragover=function(ev){if(dragFrom<0)return;ev.preventDefault();clearMarks();tr.style.outline="2px solid #e4b04b"};
+  tr.ondrop=function(ev){ev.preventDefault();var f=dragFrom;dragFrom=-1;clearMarks();movePrize(f,i)};
+  inp.value=p;inp.setAttribute("aria-label","Gevinst "+(i+1));
+  inp.oninput=function(){st.prizes[i]=inp.value;save();render()};
+  inp.onkeydown=function(ev){if(ev.altKey&&(ev.key==="ArrowUp"||ev.key==="ArrowDown")){ev.preventDefault();var to=ev.key==="ArrowUp"?i-1:i+1;movePrize(i,to);var q=t.querySelectorAll("input");if(q[to])q[to].focus()}};
+  b.appendChild(inp);
+  c.appendChild(xbtn("Fjern gevinst "+(i+1),function(){
+   st.drawn.forEach(function(d){if(d.pi===i)d.pi=-1;else if(d.pi>i)d.pi--});
+   st.prizes.splice(i,1);choice=-2;save();drawPrizes();render()}));
+  tr.appendChild(a);tr.appendChild(b);tr.appendChild(c);t.appendChild(tr);
+ });
+}
+var fillH=document.createElement("div"),fillSrc=null;
+fillH.className="fh";fillH.title="Dra ned eller opp for å kopiere";
+fillH.onmousedown=function(ev){
+ if(!fillSrc)return;ev.preventDefault();
+ var tb=fillSrc.tr.parentNode,wrap=tb.parentNode,ci=fillSrc.ci,r0=fillSrc.tr.rowIndex,r1=r0,mx=ev.clientX,my=ev.clientY,timer=null;
+ document.body.style.userSelect="none";
+ function mark(){
+  for(var i=1;i<tb.rows.length;i++){var c=tb.rows[i].cells[ci+1];if(c)c.classList.toggle("fillsel",i!==r0&&i>=Math.min(r0,r1)&&i<=Math.max(r0,r1))}
+ }
+ function pick(){
+  var rc=wrap.getBoundingClientRect(),y=Math.max(rc.top+30,Math.min(rc.bottom-4,my));
+  var el=document.elementFromPoint(mx,y),tr=el&&el.closest?el.closest("tr"):null;
+  if(tr&&tr.parentNode===tb&&tr.rowIndex>0){r1=tr.rowIndex;mark()}
+ }
+ function tick(){
+  var rc=wrap.getBoundingClientRect(),edge=36,top=rc.top+edge+24,d=0;
+  if(my>rc.bottom-edge)d=Math.min(40,(my-(rc.bottom-edge))/3+4);
+  else if(my<top)d=-Math.min(40,(top-my)/3+4);
+  if(d)wrap.scrollTop+=d;
+  pick();
+ }
+ function mv(e){mx=e.clientX;my=e.clientY;pick()}
+ function up(){
+  clearInterval(timer);document.body.style.userSelect="";
+  document.removeEventListener("mousemove",mv);document.removeEventListener("mouseup",up);
+  var v=fillSrc.inp.value,i,ii;
+  for(i=Math.min(r0,r1);i<=Math.max(r0,r1);i++){if(i===r0)continue;ii=tb.rows[i].cells[ci+1].querySelector("input");if(ii){ii.value=v;ii.dispatchEvent(new Event("input"))}}
+  r1=r0;mark();
+ }
+ timer=setInterval(tick,30);
+ document.addEventListener("mousemove",mv);document.addEventListener("mouseup",up);
+};
+var rng=null,anch=null,rcat=document.createElement("textarea");
+rcat.setAttribute("aria-label","Markerte celler");rcat.style.cssText="position:fixed;left:-9999px;top:0;width:10px;height:10px;opacity:0";
+document.body.appendChild(rcat);
+function clearRng(){
+ if(rng){var tb=rng.tb,i,j;for(i=0;i<tb.rows.length;i++)for(j=1;j<tb.rows[i].cells.length;j++)tb.rows[i].cells[j].classList.remove("rsel")}
+ rng=null;
+}
+function rngInputs(){
+ var out=[],i,j,c;
+ if(!rng)return out;
+ for(i=rng.r0;i<=rng.r1;i++)for(j=rng.c0;j<=rng.c1;j++){c=rng.tb.rows[i]&&rng.tb.rows[i].cells[j+1];if(c&&c.querySelector("input"))out.push(c.querySelector("input"))}
+ return out;
+}
+function rngText(){
+ var rows=[],i,j,cs;
+ for(i=rng.r0;i<=rng.r1;i++){cs=[];for(j=rng.c0;j<=rng.c1;j++){cs.push(rng.tb.rows[i].cells[j+1].querySelector("input").value)}rows.push(cs.join("\t"))}
+ return rows.join("\n");
+}
+function setRng(tb,ar,ac,er,ec){
+ clearRng();
+ rng={tb:tb,ar:ar,ac:ac,er:er,ec:ec,r0:Math.min(ar,er),r1:Math.max(ar,er),c0:Math.min(ac,ec),c1:Math.max(ac,ec)};
+ var i,j,c;
+ for(i=rng.r0;i<=rng.r1;i++)for(j=rng.c0;j<=rng.c1;j++){c=tb.rows[i].cells[j+1];if(c)c.classList.add("rsel")}
+ rcat.value=rngText();rcat.focus({preventScroll:true});rcat.select();
+}
+function clearCells(){rngInputs().forEach(function(inp){if(inp.value){inp.value="";inp.dispatchEvent(new Event("input"))}})}
+function pasteGrid(tr,ci,tx){
+ var lines=tx.replace(/\r/g,"").replace(/\n$/,"").split("\n"),cur=tr;
+ lines.forEach(function(line){
+  if(!cur)return;
+  line.split("\t").forEach(function(v,off){var ii=cur.querySelectorAll("input")[ci+off];if(ii){ii.value=v.trim();ii.dispatchEvent(new Event("input"))}});
+  cur=cur.nextSibling;
+ });
+}
+rcat.onkeydown=function(ev){
+ if(!rng)return;
+ var k=ev.key;
+ if(k==="Escape"){clearRng();return}
+ if(k==="Delete"||k==="Backspace"){ev.preventDefault();clearCells();return}
+ if(ev.shiftKey&&(k==="ArrowDown"||k==="ArrowUp"||k==="ArrowLeft"||k==="ArrowRight")){
+  ev.preventDefault();
+  var er=rng.er,ec=rng.ec,tb=rng.tb,ar=rng.ar,ac=rng.ac;
+  if(k==="ArrowDown")er++;if(k==="ArrowUp")er--;if(k==="ArrowRight")ec++;if(k==="ArrowLeft")ec--;
+  er=Math.max(1,Math.min(tb.rows.length-1,er));ec=Math.max(0,Math.min(2,ec));
+  setRng(tb,ar,ac,er,ec);return;
+ }
+ if(k==="Enter"||(!ev.ctrlKey&&!ev.metaKey&&k.length===1))ev.preventDefault();
+};
+rcat.oncopy=function(ev){if(!rng)return;ev.clipboardData.setData("text/plain",rngText());ev.preventDefault()};
+rcat.oncut=function(ev){if(!rng)return;ev.clipboardData.setData("text/plain",rngText());ev.preventDefault();clearCells();rcat.value=rngText();rcat.select()};
+rcat.onpaste=function(ev){
+ if(!rng)return;ev.preventDefault();
+ var tx=(ev.clipboardData||window.clipboardData).getData("text");
+ if(tx.indexOf("\n")<0&&tx.indexOf("\t")<0){rngInputs().forEach(function(inp){inp.value=tx.trim();inp.dispatchEvent(new Event("input"))})}
+ else pasteGrid(rng.tb.rows[rng.r0],rng.c0,tx);
+ rcat.value=rngText();rcat.select();
+};
+function cellDown(ev,tr,ci){
+ var tb=tr.parentNode;
+ if(ev.shiftKey&&anch&&anch.tr.parentNode===tb){
+  ev.preventDefault();setRng(tb,anch.tr.rowIndex,anch.ci,tr.rowIndex,ci);return;
+ }
+ anch={tr:tr,ci:ci};clearRng();
+ var mx=ev.clientX,my=ev.clientY,active=false,wrap=tb.parentNode,timer=null;
+ function cellAt(){
+  var rc=wrap.getBoundingClientRect(),y=Math.max(rc.top+28,Math.min(rc.bottom-4,my));
+  var el=document.elementFromPoint(mx,y),td=el&&el.closest?el.closest("td"):null;
+  if(!td||td.parentNode.parentNode!==tb)return null;
+  var r=td.parentNode.rowIndex,c=td.cellIndex-1;
+  return(r<1||c<0)?null:{r:r,c:c};
+ }
+ function upd(){
+  var h=cellAt();if(!h)return;
+  if(!active&&(h.r!==tr.rowIndex||h.c!==ci)){active=true;window.getSelection().removeAllRanges();document.body.style.userSelect="none";timer=setInterval(tick,30)}
+  if(active)setRng(tb,tr.rowIndex,ci,h.r,h.c);
+ }
+ function tick(){
+  var rc=wrap.getBoundingClientRect(),edge=36,top=rc.top+edge+24,d=0;
+  if(my>rc.bottom-edge)d=Math.min(40,(my-(rc.bottom-edge))/3+4);
+  else if(my<top)d=-Math.min(40,(top-my)/3+4);
+  if(d)wrap.scrollTop+=d;
+  upd();
+ }
+ function mv(e){mx=e.clientX;my=e.clientY;upd()}
+ function up(){clearInterval(timer);document.body.style.userSelect="";document.removeEventListener("mousemove",mv);document.removeEventListener("mouseup",up)}
+ document.addEventListener("mousemove",mv);document.addEventListener("mouseup",up);
+}
+function lookupX(m,n,p,f){return(st.tbl[m]||[]).filter(function(r){return r.k===n&&r[f]&&(m!=="book"||!r.p||r.p===p)}).map(function(r){return r[f]}).join(" / ")}
+function setFld(m,k,p,field,val){
+ var r=nm(m,k,p),rows=st.tbl[m];
+ if(!r){if(!val)return;r={k:k,v:""};if(m==="book")r.p=p||null;rows.push(r)}
+ r[field]=val;
+ if(!r.v&&!r.tel&&!r.adr)rows.splice(rows.indexOf(r),1);
+ srvOps([{op:"set",m:m,k:k,p:p||null,f:field,v:val}]);
+ save();
+}
+function drawNames(){
+ var m=st.mode,t=$("ntb"),np=gpages(),rows=[],q,n,lo,hi;
+ if(gp<1)gp=1;if(gp>np)gp=np;
+ t.innerHTML="";
+ $("nh").textContent=m==="book"?"Hvem har boka?":(m==="ticket"?"Hvem har loddene?":"Hvem har numrene?");
+ $("nhint").textContent=m==="book"?"Velg bok med pilene og skriv navn ved hvert nummer i boka. Telefon og adresse er valgfritt. «Hele boka» brukes hvis én person har alle. Enter går til neste rad. Kopier nedover ved å dra firkanten i hjørnet av cellen, eller trykk Ctrl+D. Du kan også lime inn flere rader fra Excel. Marker flere celler ved å dra over dem (eller Shift+pil): Delete sletter, Ctrl+C kopierer, Ctrl+X klipper ut, Ctrl+V limer inn.":"Skriv navn ved hvert nummer. Telefon og adresse er valgfritt. Bytt side med pilene. Enter går til neste rad. Kopier nedover ved å dra firkanten i hjørnet av cellen, eller trykk Ctrl+D. Du kan også lime inn flere rader fra Excel. Marker flere celler ved å dra over dem (eller Shift+pil): Delete sletter, Ctrl+C kopierer, Ctrl+X klipper ut, Ctrl+V limer inn.";
+ $("glabel").textContent=(m==="ares"?"Side ":"Bok ")+gp+" av "+np;
+ $("gnum").value=gp;
+ fillSrc=null;clearRng();var hd=mk("tr");hd.innerHTML="<th>"+(m==="book"?"Nr i boka":"Nummer")+"</th><th>Navn</th><th>Telefon</th><th>Adresse</th>";t.appendChild(hd);
+ if(m==="book"){rows.push({lab:"Hele boka",k:gp,p:null});for(q=1;q<=st.per;q++)rows.push({lab:"Nr "+q,k:gp,p:q})}
+ else{lo=m==="ticket"?st.start+(gp-1)*st.per:st.aFrom+(gp-1)*50;hi=m==="ticket"?lo+st.per-1:Math.min(lo+49,st.aTo);
+  for(n=lo;n<=hi;n++)rows.push({lab:"Nr "+n,k:n,p:null})}
+ rows.forEach(function(r){
+  var tr=mk("tr"),a1=mk("td"),ex=nm(m,r.k,r.p);
+  a1.textContent=r.lab;tr.appendChild(a1);
+  [["v","Navn"],["tel","Telefon"],["adr","Adresse"]].forEach(function(c,ci){
+   var td=mk("td"),inp=mk("input");
+   inp.value=ex&&ex[c[0]]?ex[c[0]]:"";inp._k=r.k;inp._p=r.p;inp._f=c[0];inp.setAttribute("aria-label",r.lab+" "+c[1].toLowerCase());
+   if(ci===1)td.style.width="120px";if(ci===2)td.style.width="210px";
+   inp.oninput=function(){setFld(m,r.k,r.p,c[0],inp.value.trim()?inp.value:"")};
+   inp.onkeydown=function(ev){
+    if(ev.shiftKey)return;
+    var tgt=null;
+    var tbl=tr.parentNode;
+    if(ev.key==="Enter"||ev.key==="ArrowDown"){tgt=tr.nextSibling;if(!tgt&&tbl.nextElementSibling&&tbl.nextElementSibling.rows&&tbl.nextElementSibling.rows.length>1)tgt=tbl.nextElementSibling.rows[1]}
+    else if(ev.key==="ArrowUp"){tgt=tr.previousSibling;if(tgt&&tgt.cells[0].tagName==="TH"){var pt=tbl.previousElementSibling;tgt=pt&&pt.rows&&pt.rows.length>1?pt.rows[pt.rows.length-1]:null}}
+    if(tgt){ev.preventDefault();var l=tgt.querySelectorAll("input");if(l[ci])l[ci].focus()}
+    else if(ev.key==="Enter"||ev.key==="ArrowUp"||ev.key==="ArrowDown")ev.preventDefault();
+   };
+   inp.onfocus=function(){fillSrc={tr:tr,ci:ci,inp:inp};td.appendChild(fillH)};
+   inp.addEventListener("mousedown",function(ev){cellDown(ev,tr,ci)});
+   inp.addEventListener("keydown",function(ev){
+    if(ev.shiftKey&&!ev.ctrlKey&&(ev.key==="ArrowDown"||ev.key==="ArrowUp")){
+     ev.preventDefault();var tb=tr.parentNode,ar=tr.rowIndex,er=Math.max(1,Math.min(tb.rows.length-1,ar+(ev.key==="ArrowDown"?1:-1)));
+     anch={tr:tr,ci:ci};setRng(tb,ar,ci,er,ci);
+    }
+   });
+   inp.addEventListener("keydown",function(ev){
+    if((ev.ctrlKey||ev.metaKey)&&(ev.key==="d"||ev.key==="D")){ev.preventDefault();var pr=tr.previousSibling,pi=pr&&pr.querySelectorAll("input")[ci];if(pi){inp.value=pi.value;inp.dispatchEvent(new Event("input"))}}
+   });
+   inp.onpaste=function(ev){
+    var tx=(ev.clipboardData||window.clipboardData).getData("text");
+    if(tx.indexOf("\n")<0&&tx.indexOf("\t")<0)return;
+    ev.preventDefault();
+    var lines=tx.replace(/\r/g,"").replace(/\n$/,"").split("\n"),cur=tr;
+    lines.forEach(function(line){
+     if(!cur)return;
+     line.split("\t").forEach(function(v,off){var ii=cur.querySelectorAll("input")[ci+off];if(ii){ii.value=v.trim();ii.dispatchEvent(new Event("input"))}});
+     cur=cur.nextSibling;
+    });
+   };
+   td.appendChild(inp);tr.appendChild(td);
+  });
+  t.appendChild(tr);
+ });
+ splitCols(t);
+}
+function splitCols(t){
+ var wrap=t.parentNode,ex=wrap.querySelectorAll(".xtb"),i;
+ for(i=0;i<ex.length;i++)wrap.removeChild(ex[i]);
+ wrap.classList.remove("multi");
+ wrap.style.removeProperty("--rh");wrap.style.removeProperty("--fs");
+ if(!$("ncard").classList.contains("max")||t.rows.length<2)return;
+ var n=t.rows.length-1,rh=Math.floor((wrap.clientHeight-30)/n);
+ rh=Math.max(18,Math.min(34,rh));
+ wrap.style.setProperty("--rh",rh+"px");
+ wrap.style.setProperty("--fs",Math.max(11,Math.min(17,Math.floor(rh*0.58)))+"px");
+}
+
+function maxToggle(cardId,btnId,on){
+ var c=$(cardId),b=$(btnId),was=c.classList.contains("max"),v=on===undefined?!was:on;
+ c.classList.toggle("max",v);b.textContent=v?"✕ Avslutt maksimering":"⤢ Maksimer";
+ if(cardId==="ncard"&&was!==v)drawNames();
+}
+window.addEventListener("resize",function(){if($("ncard").classList.contains("max"))drawNames()});
+$("nmax").onclick=function(){maxToggle("ncard","nmax")};
+$("pmax").onclick=function(){maxToggle("pcard","pmax")};
+document.addEventListener("keydown",function(ev){if(ev.key==="Escape"){maxToggle("ncard","nmax",false);maxToggle("pcard","pmax",false)}});
+$("close").addEventListener("click",function(){maxToggle("ncard","nmax",false);maxToggle("pcard","pmax",false)});
+var carryPt="";
+twoStep("absent","Ikke til stede, trekk på nytt",function(){
+ var e=sel&&entry(sel);if(!e||e.absent||busy)return;
+ e.absent=true;
+ if(e.mode==="ares")carryPt=e.pt||"";
+ choice=e.pi>=0?e.pi:-1;
+ save();render();draw();
+},"Vinneren er ikke til stede? Trykk igjen");
+function descr(e){
+ if(e.mode==="book")return"Bok "+e.n+(e.k?", nr "+e.k:"");
+ if(e.mode==="ticket")return"Lodd "+e.n+" (bok "+bookOf(e.n)+", nr "+posOf(e.n)+")";
+ return"Åresalg nr "+e.n;
+}
+function rowDesc(m,r){
+ if(m==="book")return"Bok "+r.k+(r.p?", nr "+r.p:" (hele boka)");
+ if(m==="ticket")return"Lodd "+r.k;
+ return"Åresalg nr "+r.k;
+}
+function sline(res,title,sub,cls){
+ var d=mk("div"),a=mk("div"),b=mk("div");d.className="r";a.className="t";b.className="s";
+ a.textContent=title;b.textContent=sub;d.appendChild(a);if(sub)d.appendChild(b);res.appendChild(d);
+}
+function doSearch(){
+ var q=$("sq").value.trim(),res=$("sres"),i;res.innerHTML="";
+ if(!q)return;
+ var nums=(q.match(/\d+/g)||[]).map(Number),onlyNums=/^[\d\s.,;:\/-]+$/.test(q),ql=q.toLowerCase(),hits=[],rowsHit=[];
+ st.drawn.forEach(function(e){
+  var hit=false;
+  if(onlyNums){
+   if(e.mode==="book")hit=nums.length>=2?(e.n===nums[0]&&e.k===nums[1]):e.n===nums[0];
+   else if(nums.length===1)hit=e.n===nums[0];
+   else if(e.mode==="ticket")hit=e.n===st.start+(nums[0]-1)*st.per+(nums[1]-1);
+  }else{
+   hit=[e.winner,e.pt,e.tel,e.adr,e.pi>=0&&st.prizes[e.pi]?st.prizes[e.pi]:""].join(" ").toLowerCase().indexOf(ql)>=0;
+  }
+  if(hit)hits.push(e);
+ });
+ ["book","ticket","ares"].forEach(function(m){
+  (st.tbl[m]||[]).forEach(function(r){
+   var hit=false;
+   if(onlyNums){
+    if(m==="book")hit=nums.length>=2?(r.k===nums[0]&&(!r.p||r.p===nums[1])):r.k===nums[0];
+    else if(nums.length===1)hit=r.k===nums[0];
+   }else hit=[r.v,r.tel,r.adr].join(" ").toLowerCase().indexOf(ql)>=0;
+   if(hit)rowsHit.push({m:m,r:r});
+  });
+ });
+ if(onlyNums)sline(res,hits.length?"Dette er trukket":"Ikke trukket ennå","");
+ hits.forEach(function(e){
+  var p=[];
+  if(e.absent)p.push("Ikke til stede");
+  else{var pz=e.pt||(e.pi>=0&&st.prizes[e.pi]?st.prizes[e.pi]:"");if(pz)p.push("Gevinst: "+pz)}
+  if(e.winner)p.push("Navn: "+e.winner);if(e.tel)p.push("Tlf: "+e.tel);if(e.adr)p.push("Adresse: "+e.adr);
+  if(e.t)p.push("Trukket "+new Date(e.t).toLocaleTimeString("nb-NO",{hour:"2-digit",minute:"2-digit"}));
+  sline(res,descr(e),p.join(" · "));
+ });
+ if(rowsHit.length){
+  var h=mk("div");h.className="s";h.style.margin="10px 0 2px";h.textContent="I navnelisten:";res.appendChild(h);
+  rowsHit.slice(0,30).forEach(function(x){
+   var p=[x.r.v];if(x.r.tel)p.push("Tlf: "+x.r.tel);if(x.r.adr)p.push("Adresse: "+x.r.adr);
+   sline(res,rowDesc(x.m,x.r),p.join(" · "));
+  });
+  if(rowsHit.length>30)sline(res,"… og "+(rowsHit.length-30)+" til","");
+ }
+ if(!onlyNums&&!hits.length&&!rowsHit.length)sline(res,"Ingen treff","");
+}
+function openSearch(){$("sdlg").hidden=false;$("sq").value="";$("sres").innerHTML="";$("sq").focus()}
+function closeSearch(){$("sdlg").hidden=true}
+$("srch").onclick=openSearch;
+$("sclose").onclick=closeSearch;
+$("sq").oninput=doSearch;
+$("sdlg").addEventListener("mousedown",function(ev){if(ev.target===$("sdlg"))closeSearch()});
+document.addEventListener("keydown",function(ev){if(ev.key==="Escape"&&!$("sdlg").hidden){closeSearch()}});
+$("more").onclick=function(){var h=!$("wtel").hidden;$("wtel").hidden=h;$("wadr").hidden=h;$("more").textContent=h?"Tlf og adresse":"Skjul tlf/adresse"};
+$("wtel").oninput=function(){var e=sel&&entry(sel);if(e){e.tel=$("wtel").value;save()}};
+$("wadr").oninput=function(){var e=sel&&entry(sel);if(e){e.adr=$("wadr").value;save()}};
+twoStep("newround","Ny åresalgsrunde",function(){st.round=(st.round||1)+1;if(st.mode==="ares")sel=null;save();render()},"Starte ny runde? Trykk igjen");
+twoStep("resettab","Slett trekninger i denne fanen",function(){
+ var m=st.mode;
+ st.drawn=st.drawn.filter(function(d){return!(d.mode===m&&(m!=="ares"||(d.rd||1)===(st.round||1)))});
+ sel=null;choice=-2;save();render();
+},"Slette? Trykk igjen");
+$("pimp").onclick=function(){
+ $("ppaste").value.split("\n").forEach(function(l){l=l.replace(/^\s*\d+[.)\t;:]\s*/,"").trim();if(l)st.prizes.push(l)});
+ $("ppaste").value="";save();drawPrizes();render();
+};
+twoStep("pclr","Tøm alle gevinster",function(){st.drawn.forEach(function(d){d.pi=-1});st.prizes=[];save();drawPrizes();render()});
+$("gprev").onclick=function(){gp--;drawNames()};
+$("gnext").onclick=function(){gp++;drawNames()};
+$("gnum").onchange=function(){var v=parseInt($("gnum").value,10);if(v>=1&&v!==gp){gp=v;drawNames()}};
+function importNames(){
+ var m=st.mode,rows=st.tbl[m],n=0,skip=0,batch=[];
+ $("npaste").value.split(/\r?\n/).forEach(function(l){
+  l=l.trim();if(!l)return;
+  var delim=l.indexOf("\t")>=0||l.indexOf(";")>=0;
+  var f=l.indexOf("\t")>=0?l.split("\t"):(l.indexOf(";")>=0?l.split(";"):l.split(/[,\s]+/));
+  f=f.map(function(x){return x.trim().replace(/^"|"$/g,"")});
+  var a=parseInt(f[0],10),b=parseInt(f[1],10),k,p=null,rest;
+  if(isNaN(a)){skip++;return}
+  if(m==="book"&&f.length>=3&&!isNaN(b)){k=a;p=b;rest=f.slice(2)}
+  else if(m==="ticket"&&f.length>=3&&!isNaN(b)){k=st.start+(a-1)*st.per+(b-1);rest=f.slice(2)}
+  else if(m==="ares"&&f.length>=3&&!isNaN(b)){k=b;rest=f.slice(2)}
+  else{k=a;rest=f.slice(1)}
+  if(!delim)rest=[rest.join(" ")];
+  var nv=rest[0]||"",tel=delim?(rest[1]||""):"",adr=delim?rest.slice(2).join(", "):"";
+  if(!nv&&!tel&&!adr){skip++;return}
+  var ex=nm(m,k,p),o=ex||{k:k};
+  o.v=nv;if(tel)o.tel=tel;if(adr)o.adr=adr;if(m==="book")o.p=p;
+  if(!ex)rows.push(o);n++;
+  batch.push({k:k,p:p,v:nv,tel:tel,adr:adr});
+ });
+ if(batch.length)srvOps([{op:"bulk",m:m,rows:batch}]);
+ $("npaste").value="";save();drawNames();$("nhint").textContent=n+" rader lagt til"+(skip?", "+skip+" hoppet over":"")+".";
+}
+$("nimp").onclick=importNames;
+var rt=null;
+$("reset").onclick=function(){
+ if(rt){clearTimeout(rt);rt=null;st.drawn=[];sel=null;choice=-2;save();$("reset").textContent="Slett alle trekninger";render();return}
+ $("reset").textContent="Sikker? Trykk igjen for å slette";
+ rt=setTimeout(function(){rt=null;$("reset").textContent="Slett alle trekninger"},4000);
+};
+function fs(){
+ try{if(document.fullscreenElement)document.exitFullscreen();else document.documentElement.requestFullscreen().catch(function(){$("left").textContent="Fullskjerm er ikke tilgjengelig her. Prøv F11 i nettleseren."})}catch(e){}
+}
+$("fs").onclick=fs;
+$("fsv").onclick=fs;
+if(view){$("fsv").hidden=false;document.body.addEventListener("dblclick",fs)}
+document.addEventListener("fullscreenchange",function(){if(view)$("fsv").hidden=!!document.fullscreenElement});
+function only(on){document.body.classList.toggle("only",on);$("back").hidden=!on}
+$("only").onclick=function(){only(true)};
+$("back").onclick=function(){only(false)};
+function csv(){
+ var rows=[["Nr","Type","Nummer","Loddbok","Nr i boka","Gevinst","Vinner","Telefon","Adresse","Tidspunkt","Runde","Status"]];
+ st.drawn.forEach(function(d,i){
+  rows.push([i+1,TXT[d.mode],d.mode==="book"?"":d.n,d.mode==="ticket"?bookOf(d.n):(d.mode==="book"?d.n:""),d.mode==="ticket"?posOf(d.n):(d.mode==="book"?(d.k||""):""),d.absent?"":(d.pt||(d.pi>=0&&st.prizes[d.pi]?st.prizes[d.pi]:"")),d.winner||"",d.tel||"",d.adr||"",d.t?new Date(d.t).toLocaleString("nb-NO"):"",d.mode==="ares"?(d.rd||1):"",d.absent?"Ikke til stede":""]);
+ });
+ return"\ufeff"+rows.map(function(r){return r.map(function(c){return'"'+String(c).replace(/"/g,'""')+'"'}).join(";")}).join("\r\n");
+}
+var fh=null;
+function autosave(){if(!fh)return;fh.createWritable().then(function(w){return w.write(csv()).then(function(){return w.close()})}).catch(function(){$("csvmsg").textContent="Kunne ikke lagre til filen."})}
+$("dl").onclick=function(){
+ try{var b=new Blob([csv()],{type:"text/csv;charset=utf-8"}),a=document.createElement("a");a.href=URL.createObjectURL(b);a.download="lotteri-trekninger.csv";document.body.appendChild(a);a.click();a.remove();setTimeout(function(){URL.revokeObjectURL(a.href)},2000)}catch(e){$("csvmsg").textContent="Nedlasting virker ikke her. Bruk den lagrede HTML-filen i nettleseren."}
+};
+$("pick").onclick=function(){
+ if(!window.showSaveFilePicker){$("csvmsg").textContent="Denne nettleseren støtter ikke autolagring (bruk Chrome eller Edge, og den lagrede filen). Bruk Last ned CSV i stedet.";return}
+ $("csvmsg").textContent="Åpner filvalg…";
+ window.showSaveFilePicker({suggestedName:"lotteri-trekninger.csv",types:[{description:"CSV",accept:{"text/csv":[".csv"]}}]}).then(function(h){fh=h;$("pick").textContent="Autolagring på";$("csvmsg").textContent="Autolagring er på. Alle trekninger lagres til filen du valgte.";autosave()}).catch(function(e){$("csvmsg").textContent=(e&&e.name==="AbortError")?"Valget ble avbrutt.":"Autolagring feilet: "+(e&&e.name?e.name+" – "+e.message:e)});
+};
+document.addEventListener("keydown",function(ev){
+ var t=ev.target.tagName;if(t==="INPUT"||t==="TEXTAREA"||t==="SELECT"||t==="BUTTON"||!$("drawer").hidden||!$("sdlg").hidden||!$("qrdlg").hidden)return;
+ if(ev.key===" "||ev.key==="Enter"){ev.preventDefault();draw()}else if(ev.key==="f"||ev.key==="F")fs();else if(ev.key==="v"||ev.key==="V")only(!document.body.classList.contains("only"));
+});
+try{if(window.claude&&claude.use)claude.use("room").then(function(r){if(!r)return;room=r;
+ r.on("state",function(msg){if(view&&!msg.isMe&&msg.data)applyPack(msg.data)});
+ r.on("roll",function(msg){if(view&&!msg.isMe)$("num").textContent=msg.data});
+ r.on("hello",function(){if(!view)sync()});
+ if(view)emitRoom("hello",1);else sync();
+}).catch(function(){})}catch(e){}
+var pop=null;
+function toPop(t,d){if(pop&&!pop.closed){try{pop.postMessage({jl:1,t:t,d:d},"*")}catch(e){}}}
+window.addEventListener("message",function(ev){var m=ev.data;if(!m||!m.jl)return;
+ if(view){if(m.t==="state")applyPack(m.d);else if(m.t==="roll")$("num").textContent=m.d}
+ else if(m.t==="hello"){pop=ev.source;sync()}
+});
+if(view&&window.opener){try{window.opener.postMessage({jl:1,t:"hello"},"*")}catch(e){}}
+$("pop").onclick=function(){
+ try{pop=window.open(location.href.split("#")[0]+"#visning","jl_visning")}catch(e){pop=null}
+ if(!pop)$("left").textContent="Nettleseren blokkerte det nye vinduet. Tillat popup-vinduer for denne siden og prøv igjen.";
+ else setTimeout(sync,800);
+};
+var lastLive="";
+function pull(){try{var raw=localStorage.getItem(KEY+"-live");if(!raw||raw===lastLive)return;lastLive=raw;var m=JSON.parse(raw);st=Object.assign({},D,m.st);sel=m.sel;rolling=m.rolling?true:null;render();if(m.rolling&&m.num!=null)$("num").textContent=m.num}catch(e){}}
+if(view){setInterval(pull,150);window.addEventListener("storage",pull)}
+
+// ===== Delt navneliste via Node-serveren (hvis siden åpnes fra serveren) =====
+var srv={on:false,cid:Math.random().toString(36).slice(2),q:[],busy:false,timer:null,saveT:null,cfgT:null,lastCfg:"",es:null};
+function srvChip(t,cls){var c=$("srv");if(!c)return;c.textContent=t;c.className="chip "+(cls||"");c.hidden=!t}
+function cfgNow(){return{title:st.title||"",theme:st.theme||"klassisk",books:st.books,per:st.per,start:st.start,local:!!st.local,aFrom:st.aFrom,aTo:st.aTo}}
+function hasRows(t){return!!(t&&((t.ticket&&t.ticket.length)||(t.book&&t.book.length)||(t.ares&&t.ares.length)))}
+function srvOps(ops){if(!srv||!srv.on)return;ops.forEach(function(o){srv.q.push(o)});srvFlush()}
+function srvFlush(){
+ if(srv.busy||!srv.q.length)return Promise.resolve();
+ srv.busy=true;var batch=srv.q.slice();
+ return fetch("/api/op",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({cid:srv.cid,ops:batch})})
+ .then(function(r){
+  if(r.status>=500||r.status===0)throw 0;
+  srv.q.splice(0,batch.length);srv.busy=false;srvChip("Delt liste: tilkoblet","ok");
+  if(srv.q.length)return srvFlush();
+ })
+ .catch(function(){srv.busy=false;srvChip("Delt liste: frakoblet, prøver igjen","bad");clearTimeout(srv.timer);srv.timer=setTimeout(srvFlush,2000)});
+}
+function srvSave(){
+ if(!srv.on)return;clearTimeout(srv.saveT);
+ srv.saveT=setTimeout(function(){
+  fetch("/api/save",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({st:st,csv:csv()})}).catch(function(){});
+ },1500);
+}
+function srvAfterSave(){
+ if(!srv||!srv.on||view)return;
+ clearTimeout(srv.cfgT);
+ srv.cfgT=setTimeout(function(){var c=JSON.stringify(cfgNow());if(c!==srv.lastCfg){srv.lastCfg=c;srvOps([{op:"cfg",cfg:cfgNow()}])}},400);
+ srvSave();
+}
+function refreshNames(){
+ var q=$("ntb").querySelectorAll("input"),i,inp,r,v;
+ for(i=0;i<q.length;i++){
+  inp=q[i];if(inp._f===undefined||inp===document.activeElement)continue;
+  r=nm(st.mode,inp._k,inp._p);v=r&&r[inp._f]?r[inp._f]:"";
+  if(inp.value!==v){inp.value=v;inp.classList.remove("flash");void inp.offsetWidth;inp.classList.add("flash")}
+ }
+}
+function srvAdopt(d){
+ if(hasRows(d.tbl)){
+  if(hasRows(st.tbl)&&JSON.stringify(st.tbl)!==JSON.stringify(d.tbl)){try{localStorage.setItem(KEY+"-tbl-gammel",JSON.stringify(st.tbl))}catch(e){}}
+  st.tbl=JLShared.normTbl(d.tbl);
+ }else if(hasRows(st.tbl)){srv.q.push({op:"replace",tbl:st.tbl})}
+ var S2={tbl:st.tbl,cfg:{}};srv.q.forEach(function(o){if(o.op!=="cfg"&&o.op!=="replace")JLShared.applyOp(S2,o)});st.tbl=S2.tbl;
+ if(!d.cfg||!d.cfg.books)srv.q.push({op:"cfg",cfg:cfgNow()});
+ srv.lastCfg=JSON.stringify(cfgNow());
+ try{localStorage.setItem(KEY,JSON.stringify(st))}catch(e){}
+ if(!$("drawer").hidden){drawNames()}
+ render();
+}
+function srvSync(){
+ return srvFlush().then(function(){
+  if(srv.q.length)return;
+  return fetch("/api/state").then(function(r){return r.json()}).then(function(d){srvAdopt(d);srvChip("Delt liste: tilkoblet","ok");return srvFlush()});
+ }).catch(function(){});
+}
+function srvFotos(){
+ fetch("/api/foto").then(function(r){return r.json()}).then(function(d){
+  var n=(d.fotos||[]).filter(function(x){return!x.done}).length,p=$("srvfoto");p.innerHTML="";
+  var a=document.createElement("a");a.href="/registrer";a.target="_blank";a.style.color="var(--gold)";
+  a.textContent=n?"Bilder fra mobil: "+n+" nye. Åpne registrering":"Ingen nye bilder. Åpne registrering";p.appendChild(a);
+ }).catch(function(){});
+}
+function qrSvg(url){
+ var q=qrcode(0,"M");q.addData(url);q.make();
+ var n=q.getModuleCount(),d="",r,c;
+ for(r=0;r<n;r++)for(c=0;c<n;c++)if(q.isDark(r,c))d+="M"+c+","+r+"h1v1h-1z";
+ return '<svg xmlns="http://www.w3.org/2000/svg" viewBox="-2 -2 '+(n+4)+' '+(n+4)+'" shape-rendering="crispEdges"><rect x="-2" y="-2" width="'+(n+4)+'" height="'+(n+4)+'" fill="#fff"/><path d="'+d+'" fill="#000"/></svg>';
+}
+function openQr(){
+ var box=$("qrbody");box.innerHTML="";$("qrdlg").hidden=false;
+ function msg(t){var p=document.createElement("p");p.textContent=t;p.style.margin="10px 0";box.appendChild(p);return p}
+ if(!srv.on||!srv.urls){
+  msg("QR-koden vises bare når siden er åpnet fra serveren.");
+  msg("Lukk denne siden, dobbeltklikk start.bat i mappen Julemessetrekning, og bruk adressen http://localhost:3000 (ikke filen julelotteri.html direkte). Er serveren allerede startet etter siste oppdatering? Lukk det svarte vinduet og start på nytt.");
+  return;
+ }
+ if(!srv.urls.length){msg("Fant ingen nettverksadresse. Er PC-en koblet til wifi eller nettverk?");return}
+ var sel=document.createElement("select");sel.style.cssText="width:100%;padding:8px;margin:0 0 10px;font-size:16px";
+ srv.urls.forEach(function(u){var o=document.createElement("option");o.value=u+"/mobil";o.textContent=u+"/mobil";sel.appendChild(o)});
+ var qr=document.createElement("div");qr.style.cssText="width:300px;height:300px;margin:0 auto;background:#fff;padding:10px;border-radius:10px";
+ var url=document.createElement("div");url.style.cssText="font-weight:800;margin-top:10px;word-break:break-all";
+ function draw(){try{qr.innerHTML=qrSvg(sel.value);var sv=qr.querySelector("svg");if(sv){sv.setAttribute("width","280");sv.setAttribute("height","280")}}catch(e){qr.style.color="#900";qr.style.fontSize="14px";qr.textContent="Kunne ikke lage QR-kode: "+(e&&e.message||e)}url.textContent=sel.value}
+ sel.onchange=draw;
+ if(srv.urls.length>1)box.appendChild(sel);
+ box.appendChild(qr);box.appendChild(url);
+ var h=document.createElement("p");h.className="hint";h.textContent="Skann med mobilen (samme wifi som denne PC-en). Der kan man ta bilde av et ark og sende det hit. Bildene åpnes under «Bilder» på registreringssiden.";box.appendChild(h);
+ draw();
+}
+$("qrb").onclick=openQr;
+$("qrclose").onclick=function(){$("qrdlg").hidden=true};
+$("qrdlg").addEventListener("mousedown",function(ev){if(ev.target===$("qrdlg"))$("qrdlg").hidden=true});
+document.addEventListener("keydown",function(ev){if(ev.key==="Escape"&&!$("qrdlg").hidden)$("qrdlg").hidden=true});
+function srvStart(){
+ if(view||location.protocol!=="http:"||!window.JLShared||!window.fetch||!window.EventSource)return;
+ fetch("/api/state").then(function(r){if(!r.ok)throw 0;return r.json()}).then(function(d){
+  if(!d||!d.tbl)throw 0;
+  srv.on=true;
+  srv.es=new EventSource("/api/events");
+  srv.es.onopen=function(){srvSync()};
+  srv.es.onerror=function(){srvChip("Delt liste: frakoblet, prøver igjen","bad")};
+  srv.es.onmessage=function(ev){
+   var m;try{m=JSON.parse(ev.data)}catch(e){return}
+   if(m.foto){srvFotos();return}
+   if(!m.ops||m.cid===srv.cid)return;
+   var S={tbl:st.tbl,cfg:{}},any=false;
+   m.ops.forEach(function(o){if(o.op==="cfg")return;if(JLShared.applyOp(S,o))any=true});
+   if(!any)return;
+   st.tbl=S.tbl;
+   try{localStorage.setItem(KEY,JSON.stringify(st))}catch(e){}
+   srvSave();
+   if(!$("drawer").hidden)refreshNames();
+  };
+  fetch("/api/info").then(function(r){return r.json()}).then(function(i){
+   srv.urls=i.urls||[];
+   var box=$("srvurls");box.innerHTML="";
+   (i.urls||[]).forEach(function(u){var a=document.createElement("div");a.textContent=u+"/registrer";box.appendChild(a)});
+   var sel=$("srvsel");sel.innerHTML="";
+   (i.urls||[]).forEach(function(u){var o=document.createElement("option");o.value=u+"/mobil";o.textContent=u+"/mobil";sel.appendChild(o)});
+   function drawQr(){try{var qq=qrcode(0,"M");qq.addData(sel.value);qq.make();$("srvqr").innerHTML=qq.createSvgTag({cellSize:4,margin:0,scalable:true});var sv=$("srvqr").querySelector("svg");if(sv){sv.setAttribute("width","142");sv.setAttribute("height","142")}}catch(e){}}
+   sel.onchange=drawQr;if((i.urls||[]).length)drawQr();
+   srvFotos();
+   if(!(i.urls||[]).length)box.textContent="Fant ingen nettverksadresse. Er PC-en koblet til nettverket?";
+   $("srvcard").hidden=false;
+  }).catch(function(){});
+  $("csvmsg").textContent="Serveren lagrer automatisk alle trekninger til data/trekninger.csv i programmappen. Du trenger ikke velge fil. «Last ned CSV» virker som før.";
+ }).catch(function(){});
+}
+srvStart();
+render();
+})();
+</script>
+</body>
+</html>

@@ -1,0 +1,482 @@
+<!DOCTYPE html>
+<html lang="nb">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Registrering</title>
+<script src="/shared.js"></script>
+<style>
+:root{--bg:#eef2ef;--ink:#1b2a24;--muted:#5a6a62;--line:#b9c2bd;--head:#d5ddd9;--row:#e6ece9;--ok:#1d6b46;--bad:#b3262e;--acc:#14332a;--gold:#e4b04b}
+*{box-sizing:border-box}
+html,body{height:100%}
+body{margin:0;background:var(--bg);color:var(--ink);font-family:system-ui,Segoe UI,Arial,sans-serif;font-size:16px;display:flex;flex-direction:column}
+header{display:flex;align-items:center;gap:12px;background:var(--acc);color:#fff;padding:10px 16px}
+header h1{margin:0;font-size:20px;flex:1}
+.chip{font-size:14px;font-weight:700;padding:4px 10px;border-radius:999px;background:#ffffff26}
+.chip.ok{background:#1d6b46}.chip.bad{background:var(--bad)}
+main{flex:1;min-height:0;display:grid;grid-template-columns:270px 1fr;gap:14px;padding:14px}
+nav{overflow:auto;background:#fff;border:1px solid var(--line);border-radius:10px;padding:10px}
+nav h2{font-size:15px;margin:0 0 8px}
+#books{display:grid;grid-template-columns:repeat(3,1fr);gap:6px}
+#books button{font:inherit;padding:6px 4px;border:2px solid var(--line);border-radius:8px;background:#fff;cursor:pointer;line-height:1.2}
+#books button b{display:block;font-size:17px}
+#books button span{font-size:12px;color:var(--muted)}
+#books button.full{background:#d9f0e2;border-color:#8fcba6}
+#books button.some{background:#fff7d6}
+#books button.cur{outline:3px solid var(--acc);outline-offset:1px}
+section{min-height:0;display:flex;flex-direction:column;background:#fff;border:1px solid var(--line);border-radius:10px;padding:10px}
+.bar{display:flex;align-items:center;gap:8px;margin-bottom:8px}
+.bar strong{font-size:19px;min-width:110px;text-align:center}
+.bar button{font:inherit;padding:6px 14px;border:2px solid var(--line);border-radius:8px;background:#fff;cursor:pointer}
+.bar input{width:78px;font:inherit;padding:6px;border:2px solid var(--line);border-radius:8px}
+#saved{margin-left:auto;color:var(--muted);font-size:14px}
+.tw{flex:1;min-height:0;overflow:auto;border:1px solid var(--line)}
+table{border-collapse:collapse;width:100%}
+th{position:sticky;top:0;z-index:1;background:var(--head);text-align:left;padding:6px 8px;font-size:14px;border:1px solid var(--line)}
+td{border:1px solid var(--line);padding:0;position:relative}
+.fh{position:absolute;right:0;bottom:0;width:11px;height:11px;background:#1d6b46;border:2px solid #fff;cursor:crosshair;z-index:2}
+td.fillsel input{background:#fff3b0!important}
+td.rsel,td.rsel input{background:#cfe3ff!important}
+td:first-child{background:var(--row);font-weight:700;font-size:14px;padding:0 8px;white-space:nowrap;width:110px}
+td input{display:block;width:100%;border:0;border-radius:0;padding:6px 8px;font:inherit;background:#fff}
+tr:nth-child(even) td input{background:#f3f7f5}
+td input:focus{outline:2px solid var(--ok);outline-offset:-2px;background:#fffbe6}
+@keyframes fl{from{background:#fff3b0}to{background:transparent}}
+td input.flash{animation:fl 1.6s ease-out}
+.hint{color:var(--muted);font-size:13px;margin:8px 0 0}
+main.withfoto{grid-template-columns:190px 1fr minmax(340px,42%)}
+main.withfoto #books{grid-template-columns:repeat(2,1fr)}
+#fp{min-height:0;display:flex;flex-direction:column;background:#fff;border:1px solid var(--line);border-radius:10px;padding:10px;gap:8px}
+#fp[hidden]{display:none}
+.fh2{display:flex;align-items:center;gap:10px}.fh2 strong{flex:1}.fh2 label{font-size:14px;color:var(--muted)}
+.fh2 button,.fbtn button,#fcopy{font:inherit;font-size:14px;padding:5px 10px;border:2px solid var(--line);border-radius:8px;background:#fff;cursor:pointer}
+#fstrip{display:flex;gap:6px;overflow-x:auto;padding-bottom:4px}
+#fstrip button{flex:none;border:2px solid var(--line);border-radius:8px;padding:0;background:#fff;cursor:pointer;position:relative;width:70px;height:70px;overflow:hidden}
+#fstrip button img{width:100%;height:100%;object-fit:cover;display:block}
+#fstrip button span{position:absolute;left:0;bottom:0;right:0;background:#000a;color:#fff;font-size:12px;text-align:center}
+#fstrip button.cur{outline:3px solid var(--acc)}
+#fstrip button.done{opacity:.45}
+.fbtn{display:flex;flex-wrap:wrap;gap:6px}
+#ftxt{width:100%;font:inherit;font-size:14px;border:2px solid var(--line);border-radius:8px;padding:6px}
+#fscroll{flex:1;min-height:0;overflow:auto;border:1px solid var(--line);background:#222;cursor:grab}
+#fscroll canvas{display:block}
+#fempty{padding:20px;color:#ccc}
+@media(max-width:800px){main{grid-template-columns:1fr}nav{max-height:180px}}
+</style>
+</head>
+<body>
+<header><h1 id="ttl">Registrering</h1><button id="fb" class="chip" style="border:0;cursor:pointer;color:#fff;font:inherit;font-size:14px;font-weight:700">Bilder</button><span id="st" class="chip">Kobler til…</span></header>
+<main>
+<nav aria-label="Velg bok"><h2>Velg bok</h2><div id="books"></div>
+<p class="hint">Grønn = alle lodd har navn. Gul = noen har navn.</p></nav>
+<section>
+<div class="bar">
+<button id="prev" aria-label="Forrige bok">◀</button><strong id="lab"></strong>
+<button id="next" aria-label="Neste bok">▶</button>
+<input id="gn" type="number" min="1" aria-label="Gå til bok">
+<button id="undob" title="Angre (Ctrl+Z)">↶ Angre</button><button id="redob" title="Gjør om (Ctrl+Y)">↷ Gjør om</button><button id="selall" title="Marker alle celler i boka (Ctrl+A)">Marker alt</button>
+<span id="saved"></span>
+</div>
+<div class="tw"><table id="tb"></table></div>
+<p class="hint">Skriv navn (og eventuelt telefon og adresse) ved riktig nummer. Enter eller pil ned går til neste rad. Kopier nedover ved å dra den grønne firkanten i hjørnet av cellen, eller trykk Ctrl+D. Marker flere celler ved å dra over dem, eller Ctrl+A for alle (Delete sletter, Ctrl+C og Ctrl+V kopierer og limer inn). Ctrl+Z angrer, Ctrl+Y gjør om. Du kan lime inn flere rader fra Excel. Alt lagres med en gang og vises hos de andre.</p>
+</section>
+<aside id="fp" hidden aria-label="Bilder fra mobil">
+<div class="fh2"><strong>Bilder fra mobil</strong><label><input type="checkbox" id="fdone"> vis ferdige</label><button id="fclose" aria-label="Lukk bildepanelet">✕</button></div>
+<div id="fstrip"></div>
+<div id="finfo" class="hint"></div>
+<div class="fbtn">
+<button id="fgo">Gå til boka</button><button id="fm" aria-label="Zoom ut">−</button><button id="fp2" aria-label="Zoom inn">+</button><button id="ffit">Tilpass</button><button id="frot" aria-label="Roter">↻</button>
+<button id="fok">Ferdig ✓</button><button id="fdel">Slett</button>
+</div>
+<div id="ftxtw" hidden><textarea id="ftxt" readonly rows="4" aria-label="Tekst sendt fra mobilen"></textarea><button id="fcopy">Kopier tekst</button></div>
+<div id="fscroll"><canvas id="cv"></canvas><div id="fempty" class="hint">Ingen bilder ennå. Skann QR-koden fra trekningssiden med mobilen og ta bilde av arket.</div></div>
+</aside>
+</main>
+<script>
+(function(){
+var S={tbl:JLShared.emptyTbl(),cfg:{}},cid=Math.random().toString(36).slice(2),bk=1,q=[],busy=false,online=false,timers={};
+function $(i){return document.getElementById(i)}
+function local(){return S.cfg.local!==false}
+function mode(){return local()?"book":"ticket"}
+function books(){return S.cfg.books||20}
+function per(){return S.cfg.per||25}
+function start(){return S.cfg.start==null?1:S.cfg.start}
+function chip(t,c){var e=$("st");e.textContent=t;e.className="chip "+(c||"")}
+function saved(t){$("saved").textContent=t}
+
+function rowsFor(b){
+ var out=[],i;
+ if(local()){out.push({lab:"Hele boka",k:b,p:null});for(i=1;i<=per();i++)out.push({lab:"Nr "+i,k:b,p:i})}
+ else{var lo=start()+(b-1)*per();for(i=1;i<=per();i++)out.push({lab:"Nr "+i,k:lo+i-1,p:null})}
+ return out;
+}
+function cellVal(k,p,f){var r=JLShared.find(S.tbl[mode()],mode(),k,p);return r&&r[f]?r[f]:""}
+
+function counts(){
+ var c={},m=mode(),rows=S.tbl[m],i,r,b;
+ for(i=0;i<rows.length;i++){
+  r=rows[i];if(!r.v)continue;
+  if(local()){b=r.k;if(!c[b])c[b]={n:0,whole:false};if(r.p)c[b].n++;else c[b].whole=true}
+  else{b=Math.floor((r.k-start())/per())+1;if(!c[b])c[b]={n:0,whole:false};c[b].n++}
+ }
+ return c;
+}
+function drawBooks(){
+ var box=$("books"),c=counts(),n=books(),i;
+ box.innerHTML="";
+ for(i=1;i<=n;i++)(function(b){
+  var x=c[b]||{n:0,whole:false},btn=document.createElement("button"),bb=document.createElement("b"),sp=document.createElement("span");
+  bb.textContent="Bok "+b;sp.textContent=x.whole?"hele boka":x.n+" / "+per();
+  btn.appendChild(bb);btn.appendChild(sp);
+  if(x.whole||x.n>=per())btn.className="full";else if(x.n>0)btn.className="some";
+  if(b===bk)btn.className+=" cur";
+  btn.onclick=function(){go(b)};
+  box.appendChild(btn);
+ })(i);
+}
+function go(b){bk=Math.max(1,Math.min(books(),b||1));drawTable();drawBooks()}
+
+var hist=[],redo=[];
+function recHist(k,p,f,o,n){
+ var now=Date.now(),g=hist[hist.length-1],key=k+"/"+p+"/"+f,it,i;
+ redo.length=0;
+ if(g&&now-g.t<200){
+  for(i=0;i<g.items.length;i++)if(g.items[i].key===key){g.items[i].n=n;g.t=now;return}
+  g.items.push({key:key,k:k,p:p,f:f,o:o,n:n});g.t=now;return;
+ }
+ if(g&&g.items.length===1&&g.items[0].key===key&&now-g.t<1500){g.items[0].n=n;g.t=now;return}
+ hist.push({bk:bk,t:now,items:[{key:key,k:k,p:p,f:f,o:o,n:n}]});
+ if(hist.length>300)hist.shift();
+}
+function syncInputs(){
+ var q2=$("tb").querySelectorAll("input"),i,inp,v;
+ for(i=0;i<q2.length;i++){inp=q2[i];if(inp._f===undefined)continue;v=cellVal(inp._k,inp._p,inp._f);if(inp.value!==v)inp.value=v}
+}
+function undoRedo(from,to,msg){
+ var g=from.pop();if(!g){saved("Ingenting å "+msg);return}
+ var items=g.items.slice();
+ if(to===redo)items.reverse();
+ items.forEach(function(it){setCell(it.k,it.p,it.f,to===redo?it.o:it.n,true)});
+ to.push(g);
+ if(g.bk!==bk&&g.bk<=books())go(g.bk);else syncInputs();
+ saved((msg==="angre"?"Angret ":"Gjort om ")+g.items.length+(g.items.length===1?" celle":" celler"));
+}
+function doUndo(){undoRedo(hist,redo,"angre")}
+function doRedo(){undoRedo(redo,hist,"gjøre om")}
+function setCell(k,p,f,v,nohist){
+ if(!nohist){var old=cellVal(k,p,f);if(old===v)return;recHist(k,p,f,old,v)}
+ var op={op:"set",m:mode(),k:k,p:p,f:f,v:v};
+ JLShared.applyOp(S,op);
+ var key=k+"/"+p+"/"+f;
+ clearTimeout(timers[key]);
+ timers[key]=setTimeout(function(){delete timers[key];q.push(op);flush()},350);
+ saved("Skriver…");drawBooks();
+}
+function flush(){
+ if(busy||!q.length)return Promise.resolve();
+ busy=true;var batch=q.slice();
+ return fetch("/api/op",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({cid:cid,ops:batch})})
+ .then(function(r){if(r.status>=500)throw 0;q.splice(0,batch.length);busy=false;
+  if(!q.length&&!Object.keys(timers).length)saved("Lagret "+new Date().toLocaleTimeString("nb-NO",{hour:"2-digit",minute:"2-digit",second:"2-digit"}));
+  if(q.length)return flush()})
+ .catch(function(){busy=false;chip("Frakoblet. Lagrer så snart forbindelsen er tilbake","bad");saved("Ikke lagret ennå");setTimeout(flush,2000)});
+}
+
+var fillH=document.createElement("div"),fillSrc=null;
+fillH.className="fh";fillH.title="Dra ned eller opp for å kopiere";
+fillH.onmousedown=function(ev){
+ if(!fillSrc)return;ev.preventDefault();
+ var tb=fillSrc.tr.parentNode,wrap=tb.parentNode,ci=fillSrc.ci,r0=fillSrc.tr.rowIndex,r1=r0,mx=ev.clientX,my=ev.clientY,timer=null;
+ document.body.style.userSelect="none";
+ function mark(){
+  for(var i=1;i<tb.rows.length;i++){var c=tb.rows[i].cells[ci+1];if(c)c.classList.toggle("fillsel",i!==r0&&i>=Math.min(r0,r1)&&i<=Math.max(r0,r1))}
+ }
+ function pick(){
+  var rc=wrap.getBoundingClientRect(),y=Math.max(rc.top+30,Math.min(rc.bottom-4,my));
+  var el=document.elementFromPoint(mx,y),tr=el&&el.closest?el.closest("tr"):null;
+  if(tr&&tr.parentNode===tb&&tr.rowIndex>0){r1=tr.rowIndex;mark()}
+ }
+ function tick(){
+  var rc=wrap.getBoundingClientRect(),edge=36,top=rc.top+edge+24,d=0;
+  if(my>rc.bottom-edge)d=Math.min(40,(my-(rc.bottom-edge))/3+4);
+  else if(my<top)d=-Math.min(40,(top-my)/3+4);
+  if(d)wrap.scrollTop+=d;
+  pick();
+ }
+ function mv(e){mx=e.clientX;my=e.clientY;pick()}
+ function up(){
+  clearInterval(timer);document.body.style.userSelect="";
+  document.removeEventListener("mousemove",mv);document.removeEventListener("mouseup",up);
+  var v=fillSrc.inp.value,i,ii;
+  for(i=Math.min(r0,r1);i<=Math.max(r0,r1);i++){if(i===r0)continue;ii=tb.rows[i].cells[ci+1].querySelector("input");if(ii){ii.value=v;ii.dispatchEvent(new Event("input"))}}
+  r1=r0;mark();
+ }
+ timer=setInterval(tick,30);
+ document.addEventListener("mousemove",mv);document.addEventListener("mouseup",up);
+};
+var rng=null,anch=null,rcat=document.createElement("textarea");
+rcat.setAttribute("aria-label","Markerte celler");rcat.style.cssText="position:fixed;left:-9999px;top:0;width:10px;height:10px;opacity:0";
+document.body.appendChild(rcat);
+function clearRng(){
+ if(rng){var tb=rng.tb,i,j;for(i=0;i<tb.rows.length;i++)for(j=1;j<tb.rows[i].cells.length;j++)tb.rows[i].cells[j].classList.remove("rsel")}
+ rng=null;
+}
+function rngInputs(){
+ var out=[],i,j,c;
+ if(!rng)return out;
+ for(i=rng.r0;i<=rng.r1;i++)for(j=rng.c0;j<=rng.c1;j++){c=rng.tb.rows[i]&&rng.tb.rows[i].cells[j+1];if(c&&c.querySelector("input"))out.push(c.querySelector("input"))}
+ return out;
+}
+function rngText(){
+ var rows=[],i,j,cs;
+ for(i=rng.r0;i<=rng.r1;i++){cs=[];for(j=rng.c0;j<=rng.c1;j++){cs.push(rng.tb.rows[i].cells[j+1].querySelector("input").value)}rows.push(cs.join("\t"))}
+ return rows.join("\n");
+}
+function setRng(tb,ar,ac,er,ec){
+ clearRng();
+ rng={tb:tb,ar:ar,ac:ac,er:er,ec:ec,r0:Math.min(ar,er),r1:Math.max(ar,er),c0:Math.min(ac,ec),c1:Math.max(ac,ec)};
+ var i,j,c;
+ for(i=rng.r0;i<=rng.r1;i++)for(j=rng.c0;j<=rng.c1;j++){c=tb.rows[i].cells[j+1];if(c)c.classList.add("rsel")}
+ rcat.value=rngText();rcat.focus({preventScroll:true});rcat.select();
+}
+function clearCells(){rngInputs().forEach(function(inp){if(inp.value){inp.value="";inp.dispatchEvent(new Event("input"))}})}
+function pasteGrid(tr,ci,tx){
+ var lines=tx.replace(/\r/g,"").replace(/\n$/,"").split("\n"),cur=tr;
+ lines.forEach(function(line){
+  if(!cur)return;
+  line.split("\t").forEach(function(v,off){var ii=cur.querySelectorAll("input")[ci+off];if(ii){ii.value=v.trim();ii.dispatchEvent(new Event("input"))}});
+  cur=cur.nextSibling;
+ });
+}
+function selectAllCells(){
+ var tb=$("tb");if(tb.rows.length<2)return;
+ setRng(tb,1,0,tb.rows.length-1,2);saved("Markerte alle celler i boka. Delete sletter, Ctrl+Z angrer.");
+}
+$("selall").onclick=selectAllCells;
+$("undob").onclick=doUndo;$("redob").onclick=doRedo;
+document.addEventListener("keydown",function(ev){
+ var t=ev.target,inTab=t===rcat||(t&&t.closest&&t.closest("#tb"));
+ if(!inTab&&t!==document.body)return;
+ if(!(ev.ctrlKey||ev.metaKey))return;
+ var k=ev.key.toLowerCase();
+ if(k==="z"&&!ev.shiftKey){ev.preventDefault();doUndo();return}
+ if(k==="y"||(k==="z"&&ev.shiftKey)){ev.preventDefault();doRedo();return}
+ if(k==="a"){
+  var all=t===rcat||t===document.body||(t.tagName==="INPUT"&&(!t.value||(t.selectionStart===0&&t.selectionEnd===t.value.length)));
+  if(all){ev.preventDefault();selectAllCells()}
+ }
+},true);
+rcat.onkeydown=function(ev){
+ if(!rng)return;
+ var k=ev.key;
+ if(k==="Escape"){clearRng();return}
+ if(k==="Delete"||k==="Backspace"){ev.preventDefault();var n0=rngInputs().filter(function(i){return i.value}).length;clearCells();saved("Slettet "+n0+" celler. Ctrl+Z angrer.");return}
+ if(ev.shiftKey&&(k==="ArrowDown"||k==="ArrowUp"||k==="ArrowLeft"||k==="ArrowRight")){
+  ev.preventDefault();
+  var er=rng.er,ec=rng.ec,tb=rng.tb,ar=rng.ar,ac=rng.ac;
+  if(k==="ArrowDown")er++;if(k==="ArrowUp")er--;if(k==="ArrowRight")ec++;if(k==="ArrowLeft")ec--;
+  er=Math.max(1,Math.min(tb.rows.length-1,er));ec=Math.max(0,Math.min(2,ec));
+  setRng(tb,ar,ac,er,ec);return;
+ }
+ if(k==="Enter"||(!ev.ctrlKey&&!ev.metaKey&&k.length===1))ev.preventDefault();
+};
+rcat.oncopy=function(ev){if(!rng)return;ev.clipboardData.setData("text/plain",rngText());ev.preventDefault()};
+rcat.oncut=function(ev){if(!rng)return;ev.clipboardData.setData("text/plain",rngText());ev.preventDefault();clearCells();rcat.value=rngText();rcat.select()};
+rcat.onpaste=function(ev){
+ if(!rng)return;ev.preventDefault();
+ var tx=(ev.clipboardData||window.clipboardData).getData("text");
+ if(tx.indexOf("\n")<0&&tx.indexOf("\t")<0){rngInputs().forEach(function(inp){inp.value=tx.trim();inp.dispatchEvent(new Event("input"))})}
+ else pasteGrid(rng.tb.rows[rng.r0],rng.c0,tx);
+ rcat.value=rngText();rcat.select();
+};
+function cellDown(ev,tr,ci){
+ var tb=tr.parentNode;
+ if(ev.shiftKey&&anch&&anch.tr.parentNode===tb){
+  ev.preventDefault();setRng(tb,anch.tr.rowIndex,anch.ci,tr.rowIndex,ci);return;
+ }
+ anch={tr:tr,ci:ci};clearRng();
+ var mx=ev.clientX,my=ev.clientY,active=false,wrap=tb.parentNode,timer=null;
+ function cellAt(){
+  var rc=wrap.getBoundingClientRect(),y=Math.max(rc.top+28,Math.min(rc.bottom-4,my));
+  var el=document.elementFromPoint(mx,y),td=el&&el.closest?el.closest("td"):null;
+  if(!td||td.parentNode.parentNode!==tb)return null;
+  var r=td.parentNode.rowIndex,c=td.cellIndex-1;
+  return(r<1||c<0)?null:{r:r,c:c};
+ }
+ function upd(){
+  var h=cellAt();if(!h)return;
+  if(!active&&(h.r!==tr.rowIndex||h.c!==ci)){active=true;window.getSelection().removeAllRanges();document.body.style.userSelect="none";timer=setInterval(tick,30)}
+  if(active)setRng(tb,tr.rowIndex,ci,h.r,h.c);
+ }
+ function tick(){
+  var rc=wrap.getBoundingClientRect(),edge=36,top=rc.top+edge+24,d=0;
+  if(my>rc.bottom-edge)d=Math.min(40,(my-(rc.bottom-edge))/3+4);
+  else if(my<top)d=-Math.min(40,(top-my)/3+4);
+  if(d)wrap.scrollTop+=d;
+  upd();
+ }
+ function mv(e){mx=e.clientX;my=e.clientY;upd()}
+ function up(){clearInterval(timer);document.body.style.userSelect="";document.removeEventListener("mousemove",mv);document.removeEventListener("mouseup",up)}
+ document.addEventListener("mousemove",mv);document.addEventListener("mouseup",up);
+}
+function drawTable(){
+ var t=$("tb"),rows=rowsFor(bk);t.innerHTML="";fillSrc=null;clearRng();
+ $("lab").textContent="Bok "+bk+" av "+books();$("gn").value=bk;
+ var hd=document.createElement("tr");hd.innerHTML="<th>"+(local()?"Nr i boka":"Nr")+"</th><th>Navn</th><th>Telefon</th><th>Adresse</th>";t.appendChild(hd);
+ rows.forEach(function(r){
+  var tr=document.createElement("tr"),a=document.createElement("td");
+  a.textContent=r.lab;if(!local())a.title="Lodd nr "+r.k;tr.appendChild(a);
+  [["v",0],["tel",1],["adr",2]].forEach(function(c){
+   var td=document.createElement("td"),inp=document.createElement("input"),ci=c[1];
+   inp.value=cellVal(r.k,r.p,c[0]);inp._k=r.k;inp._p=r.p;inp._f=c[0];
+   inp.setAttribute("aria-label",r.lab+" "+["navn","telefon","adresse"][ci]);inp.autocomplete="off";
+   if(ci===1)td.style.width="140px";if(ci===2)td.style.width="230px";
+   inp.oninput=function(){setCell(r.k,r.p,c[0],inp.value)};
+   inp.onfocus=function(){fillSrc={tr:tr,ci:ci,inp:inp};td.appendChild(fillH)};
+   inp.addEventListener("mousedown",function(ev){cellDown(ev,tr,ci)});
+   inp.addEventListener("keydown",function(ev){
+    if(ev.shiftKey&&!ev.ctrlKey&&(ev.key==="ArrowDown"||ev.key==="ArrowUp")){
+     ev.preventDefault();var tb2=tr.parentNode,ar=tr.rowIndex,er=Math.max(1,Math.min(tb2.rows.length-1,ar+(ev.key==="ArrowDown"?1:-1)));
+     anch={tr:tr,ci:ci};setRng(tb2,ar,ci,er,ci);
+    }
+   });
+   inp.onblur=function(){var key=r.k+"/"+r.p+"/"+c[0];if(timers[key]){clearTimeout(timers[key]);delete timers[key];q.push({op:"set",m:mode(),k:r.k,p:r.p,f:c[0],v:inp.value});flush()}};
+   inp.onkeydown=function(ev){
+    if(ev.shiftKey)return;
+    var tgt=null;
+    if(ev.key==="Enter"||ev.key==="ArrowDown")tgt=tr.nextSibling;
+    else if(ev.key==="ArrowUp"){tgt=tr.previousSibling;if(tgt&&tgt.firstChild.tagName==="TH")tgt=null}
+    else if((ev.ctrlKey||ev.metaKey)&&(ev.key==="d"||ev.key==="D")){
+     ev.preventDefault();var pr=tr.previousSibling,pi=pr&&pr.querySelectorAll("input")[ci];
+     if(pi){inp.value=pi.value;setCell(r.k,r.p,c[0],inp.value)}return;
+    }
+    if(ev.key==="Enter"||ev.key==="ArrowUp"||ev.key==="ArrowDown"){ev.preventDefault();var l=tgt&&tgt.querySelectorAll("input");if(l&&l[ci])l[ci].focus()}
+   };
+   inp.onpaste=function(ev){
+    var tx=(ev.clipboardData||window.clipboardData).getData("text");
+    if(tx.indexOf("\n")<0&&tx.indexOf("\t")<0)return;
+    ev.preventDefault();
+    var lines=tx.replace(/\r/g,"").replace(/\n$/,"").split("\n"),cur=tr;
+    lines.forEach(function(line){
+     if(!cur)return;
+     line.split("\t").forEach(function(v,off){var ii=cur.querySelectorAll("input")[ci+off];if(ii){ii.value=v.trim();setCell(ii._k,ii._p,ii._f,ii.value)}});
+     cur=cur.nextSibling;
+    });
+   };
+   td.appendChild(inp);tr.appendChild(td);
+  });
+  t.appendChild(tr);
+ });
+}
+function refreshCells(){
+ var q2=$("tb").querySelectorAll("input"),i,inp,v;
+ for(i=0;i<q2.length;i++){
+  inp=q2[i];if(inp._f===undefined||inp===document.activeElement)continue;
+  v=cellVal(inp._k,inp._p,inp._f);
+  if(inp.value!==v){inp.value=v;inp.classList.remove("flash");void inp.offsetWidth;inp.classList.add("flash")}
+ }
+}
+function applyCfg(){
+ $("ttl").textContent=(S.cfg.title||"Julemessens lotteri")+" – registrering";document.title=$("ttl").textContent;
+ if(bk>books())bk=books();
+}
+function load(){
+ return fetch("/api/state").then(function(r){return r.json()}).then(function(d){
+  S.tbl=JLShared.normTbl(d.tbl);S.cfg=d.cfg||{};
+  var S2={tbl:S.tbl,cfg:S.cfg};q.forEach(function(o){JLShared.applyOp(S2,o)});S.tbl=S2.tbl;
+  applyCfg();drawBooks();drawTable();
+  online=true;chip("Tilkoblet","ok");
+ });
+}
+function connect(){
+ var es=new EventSource("/api/events");
+ es.onopen=function(){flush().then(function(){if(!q.length)return load()}).then(loadFotos).catch(function(){})};
+ es.onerror=function(){online=false;chip("Frakoblet. Prøver igjen…","bad")};
+ es.onmessage=function(ev){
+  var m;try{m=JSON.parse(ev.data)}catch(e){return}
+  if(m.foto){loadFotos();return}
+  if(!m.ops||m.cid===cid)return;
+  var cfgChanged=false,any=false;
+  m.ops.forEach(function(o){
+   if(o.op==="cfg"){JLShared.applyOp(S,o);cfgChanged=true}
+   else if(JLShared.applyOp(S,o))any=true;
+  });
+  if(cfgChanged){applyCfg();drawBooks();drawTable()}
+  else if(any){drawBooks();refreshCells()}
+ };
+}
+
+// ---------- Bilder fra mobil ----------
+var F=[],fcur=null,fimg=null,frot=0,fzoom=1;
+function fnow(){return F.filter(function(x){return x.id===fcur})[0]||null}
+function fvisible(){var all=$("fdone").checked;return F.filter(function(x){return all||!x.done})}
+function loadFotos(){
+ return fetch("/api/foto").then(function(r){return r.json()}).then(function(d){F=d.fotos||[];drawFotos()}).catch(function(){});
+}
+function drawFotos(){
+ var n=F.filter(function(x){return!x.done}).length;
+ $("fb").textContent="Bilder"+(n?" ("+n+" nye)":"");
+ var vis=fvisible(),strip=$("fstrip");strip.innerHTML="";
+ if(fcur&&!vis.some(function(x){return x.id===fcur})&&!(fnow()&&fnow().done&&false)){if(!fnow())fcur=null}
+ vis.forEach(function(x){
+  var b=document.createElement("button"),im=document.createElement("img"),sp=document.createElement("span");
+  im.src="/foto/"+x.id;im.loading="lazy";im.alt="";
+  sp.textContent=(x.bok?"Bok "+x.bok:"Uten bok")+(x.done?" ✓":"");
+  b.appendChild(im);b.appendChild(sp);
+  if(x.id===fcur)b.className="cur";if(x.done)b.className+=" done";
+  b.onclick=function(){selFoto(x.id)};strip.appendChild(b);
+ });
+ if(!fcur&&vis.length)selFoto(vis[0].id);
+ var f=fnow();
+ $("fempty").hidden=!!f;$("cv").hidden=!f;
+ $("finfo").textContent=f?(f.bok?"Bok "+f.bok+" · ":"")+new Date(f.t).toLocaleTimeString("nb-NO",{hour:"2-digit",minute:"2-digit"})+(f.done?" · ferdig":""):"";
+ $("fok").textContent=f&&f.done?"Ikke ferdig":"Ferdig ✓";
+ $("fgo").hidden=!(f&&f.bok&&local());
+ $("ftxtw").hidden=!(f&&f.txt);if(f&&f.txt)$("ftxt").value=f.txt;
+}
+function selFoto(id){
+ fcur=id;frot=0;fzoom=1;var f=fnow();
+ fimg=new Image();fimg.onload=paint;fimg.src="/foto/"+id;
+ if(f&&f.bok&&local()&&f.bok<=books())go(f.bok);
+ drawFotos();
+}
+function paint(){
+ if(!fimg||!fimg.naturalWidth)return;
+ var sc=$("fscroll"),c=$("cv"),sw=frot%180?fimg.naturalHeight:fimg.naturalWidth,sh=frot%180?fimg.naturalWidth:fimg.naturalHeight;
+ var scale=Math.max(0.05,(sc.clientWidth-4)/sw)*fzoom;
+ c.width=Math.round(sw*scale);c.height=Math.round(sh*scale);
+ var x=c.getContext("2d");x.save();x.translate(c.width/2,c.height/2);x.rotate(frot*Math.PI/180);
+ x.drawImage(fimg,-fimg.naturalWidth*scale/2,-fimg.naturalHeight*scale/2,fimg.naturalWidth*scale,fimg.naturalHeight*scale);x.restore();
+}
+function showPanel(on){$("fp").hidden=!on;document.querySelector("main").classList.toggle("withfoto",on);if(on){loadFotos().then(paint)}}
+$("fb").onclick=function(){showPanel($("fp").hidden)};
+$("fclose").onclick=function(){showPanel(false)};
+$("fdone").onchange=drawFotos;
+$("fm").onclick=function(){fzoom=Math.max(0.5,fzoom/1.25);paint()};
+$("fp2").onclick=function(){fzoom=Math.min(5,fzoom*1.25);paint()};
+$("ffit").onclick=function(){fzoom=1;paint()};
+$("frot").onclick=function(){frot=(frot+90)%360;paint()};
+$("fgo").onclick=function(){var f=fnow();if(f&&f.bok)go(f.bok)};
+$("fok").onclick=function(){var f=fnow();if(f)fetch("/api/foto/"+f.id+"/done",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({done:!f.done})}).then(loadFotos)};
+var delT=null;
+$("fdel").onclick=function(){
+ var f=fnow();if(!f)return;
+ if(delT){clearTimeout(delT);delT=null;$("fdel").textContent="Slett";fetch("/api/foto/"+f.id+"/delete",{method:"POST",headers:{"Content-Type":"application/json"},body:"{}"}).then(function(){fcur=null;return loadFotos()});return}
+ $("fdel").textContent="Sikker? Trykk igjen";delT=setTimeout(function(){delT=null;$("fdel").textContent="Slett"},4000);
+};
+$("fcopy").onclick=function(){var t=$("ftxt");t.select();try{document.execCommand("copy")}catch(e){}};
+(function(){var sc=$("fscroll"),dn=false,x0,y0,l0,t0;
+ sc.addEventListener("mousedown",function(e){dn=true;x0=e.clientX;y0=e.clientY;l0=sc.scrollLeft;t0=sc.scrollTop;e.preventDefault()});
+ window.addEventListener("mousemove",function(e){if(dn){sc.scrollLeft=l0-(e.clientX-x0);sc.scrollTop=t0-(e.clientY-y0)}});
+ window.addEventListener("mouseup",function(){dn=false});
+})();
+window.addEventListener("resize",function(){if(!$("fp").hidden)paint()});
+$("prev").onclick=function(){go(bk-1)};
+$("next").onclick=function(){go(bk+1)};
+$("gn").onchange=function(){var v=parseInt($("gn").value,10);if(v>=1&&v!==bk)go(v)};
+window.addEventListener("beforeunload",function(ev){if(q.length||Object.keys(timers).length){ev.preventDefault();ev.returnValue=""}});
+load().then(connect).catch(function(){chip("Fant ikke serveren","bad");setTimeout(function(){location.reload()},4000)});
+})();
+</script>
+</body>
+</html>

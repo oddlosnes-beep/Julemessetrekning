@@ -1,0 +1,4 @@
+# Dataene fra messen (navn, telefon, adresse, bilder) skal aldri på GitHub
+data/
+*.csv
+node_modules/

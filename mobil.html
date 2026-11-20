@@ -1,0 +1,110 @@
+<!DOCTYPE html>
+<html lang="nb">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Send bilde</title>
+<style>
+:root{--ink:#1b2a24;--muted:#5a6a62;--line:#b9c2bd;--acc:#14332a;--ok:#1d6b46;--bad:#b3262e}
+*{box-sizing:border-box}
+body{margin:0;font-family:system-ui,Segoe UI,Arial,sans-serif;font-size:18px;color:var(--ink);background:#eef2ef}
+header{background:var(--acc);color:#fff;padding:14px 16px;font-size:20px;font-weight:700}
+main{padding:14px;max-width:560px;margin:0 auto}
+.card{background:#fff;border:1px solid var(--line);border-radius:12px;padding:14px;margin-bottom:14px}
+label{display:block;font-weight:700;margin-bottom:6px}
+.row{display:flex;gap:8px;align-items:center}
+.row input{flex:1;min-width:0;font:inherit;padding:12px;border:2px solid var(--line);border-radius:10px;text-align:center;font-size:22px}
+.row button{font:inherit;font-size:24px;width:56px;height:56px;border:2px solid var(--line);border-radius:10px;background:#fff}
+textarea{width:100%;font:inherit;font-size:16px;padding:10px;border:2px solid var(--line);border-radius:10px;min-height:90px}
+.big{display:block;width:100%;font:inherit;font-weight:800;font-size:22px;padding:18px;border:0;border-radius:14px;background:var(--ok);color:#fff;text-align:center}
+.alt{display:block;width:100%;margin-top:10px;font:inherit;padding:12px;border:2px solid var(--line);border-radius:12px;background:#fff;text-align:center}
+.hint{color:var(--muted);font-size:15px;margin:8px 0 0}
+.item{display:flex;gap:10px;align-items:center;padding:8px 0;border-bottom:1px solid #e3e8e5}
+.item img{width:56px;height:56px;object-fit:cover;border-radius:8px;background:#ddd}
+.item .t{flex:1}
+.item .s{font-size:14px;color:var(--muted)}
+.item.ok .s{color:var(--ok);font-weight:700}
+.item.bad .s{color:var(--bad);font-weight:700}
+.item button{font:inherit;padding:8px 12px;border:2px solid var(--line);border-radius:8px;background:#fff}
+</style>
+</head>
+<body>
+<header id="ttl">Send bilde til PC-en</header>
+<main>
+<div class="card">
+<label for="bok">Hvilken bok gjelder arket? (valgfritt)</label>
+<div class="row"><button id="m" aria-label="Forrige bok">−</button><input id="bok" type="number" inputmode="numeric" min="1" placeholder="Bok nr"><button id="p" aria-label="Neste bok">+</button></div>
+</div>
+<div class="card">
+<label for="txt">Tekst fra mobilens tekstgjenkjenning (valgfritt)</label>
+<textarea id="txt" placeholder="Lim inn tekst her hvis du har kopiert den fra bildet"></textarea>
+<p class="hint">iPhone: hold fingeren på teksten i bildet og velg «Kopier». Android: Google Lens eller Galleri. Teksten følger med bildet og vises på PC-en, der noen kontrollerer og skriver inn.</p>
+</div>
+<input id="cam" type="file" accept="image/*" capture="environment" hidden>
+<input id="gal" type="file" accept="image/*" multiple hidden>
+<button class="big" id="take">Ta bilde av arket</button>
+<button class="alt" id="pick">Velg bilde fra galleriet</button>
+<p class="hint">Hold mobilen rett over arket, med god belysning og hele arket med. Bildene vises på PC-en med en gang.</p>
+<div class="card" id="listcard" hidden><label>Sendt fra denne mobilen</label><div id="list"></div></div>
+</main>
+<script>
+(function(){
+function $(i){return document.getElementById(i)}
+var KEY="julelotteri-mobil-bok";
+try{var b0=localStorage.getItem(KEY);if(b0)$("bok").value=b0}catch(e){}
+function bok(){var v=parseInt($("bok").value,10);return isNaN(v)||v<1?null:v}
+function setBok(v){$("bok").value=v<1?"":v;try{localStorage.setItem(KEY,$("bok").value)}catch(e){}}
+$("m").onclick=function(){setBok((bok()||1)-1)};
+$("p").onclick=function(){setBok((bok()||0)+1)};
+$("bok").onchange=function(){setBok(bok()||0)};
+fetch("/api/state").then(function(r){return r.json()}).then(function(d){if(d.cfg&&d.cfg.title)$("ttl").textContent=d.cfg.title+": send bilde"}).catch(function(){});
+
+function toData(file){
+ return new Promise(function(res){
+  var img=new Image(),u=URL.createObjectURL(file);
+  img.onload=function(){
+   var M=2400,s=Math.min(1,M/Math.max(img.naturalWidth,img.naturalHeight)),c=document.createElement("canvas");
+   c.width=Math.round(img.naturalWidth*s);c.height=Math.round(img.naturalHeight*s);
+   c.getContext("2d").drawImage(img,0,0,c.width,c.height);
+   var d=c.toDataURL("image/jpeg",0.85);
+   res({data:d,thumb:u});
+  };
+  img.onerror=function(){
+   var fr=new FileReader();fr.onload=function(){res({data:fr.result,thumb:u})};fr.readAsDataURL(file);
+  };
+  img.src=u;
+ });
+}
+var queue=Promise.resolve();
+function addFile(file){
+ var b=bok(),t=$("txt").value;
+ var el=document.createElement("div");el.className="item";
+ var im=document.createElement("img"),tx=document.createElement("div"),nm=document.createElement("div"),st=document.createElement("div"),bt=document.createElement("button");
+ tx.className="t";st.className="s";nm.textContent=b?"Bok "+b:"Uten bok";st.textContent="Venter…";
+ bt.textContent="Prøv igjen";bt.hidden=true;
+ tx.appendChild(nm);tx.appendChild(st);el.appendChild(im);el.appendChild(tx);el.appendChild(bt);
+ $("list").insertBefore(el,$("list").firstChild);$("listcard").hidden=false;
+ var payload=null;
+ function send(){
+  el.className="item";bt.hidden=true;st.textContent="Sender…";
+  return fetch("/api/foto",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({bok:b,txt:t,img:payload})})
+   .then(function(r){if(!r.ok)throw 0;el.className="item ok";st.textContent="Sendt "+new Date().toLocaleTimeString("nb-NO",{hour:"2-digit",minute:"2-digit"})})
+   .catch(function(){el.className="item bad";st.textContent="Feilet. Sjekk wifi og prøv igjen.";bt.hidden=false});
+ }
+ bt.onclick=send;
+ queue=queue.then(function(){return toData(file)}).then(function(o){im.src=o.thumb;payload=o.data;return send()});
+}
+function handle(inp){
+ var fl=inp.files;
+ for(var i=0;i<fl.length;i++)addFile(fl[i]);
+ inp.value="";
+ $("txt").value="";
+}
+$("take").onclick=function(){$("cam").click()};
+$("pick").onclick=function(){$("gal").click()};
+$("cam").onchange=function(){handle($("cam"))};
+$("gal").onchange=function(){handle($("gal"))};
+})();
+</script>
+</body>
+</html>
