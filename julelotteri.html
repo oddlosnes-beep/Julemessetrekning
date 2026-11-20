@@ -156,6 +156,18 @@ html[data-theme=lys]{color-scheme:light;--bg:#f4efe4;--panel:#ffffff;--ink:#2630
 .view #srv,.only #srv{display:none}
 @keyframes jlflash{from{background:#fff3b0}to{background:transparent}}
 .tb td input.flash{animation:jlflash 1.6s ease-out}
+.dtabs{display:flex;gap:6px;flex-wrap:wrap;margin:0 0 10px}
+.dtabs button{font:inherit;font-weight:800;padding:8px 16px;border-radius:10px;border:2px solid var(--edge);background:var(--panel);color:var(--ink);cursor:pointer}
+.dtabs button[aria-pressed=true]{background:var(--gold);color:#2a1a00;border-color:var(--gold)}
+.dtabs button.red{margin-left:auto;border-color:#b3262e;color:#ff9a9a}
+.dtabs button.red[aria-pressed=true]{background:#b3262e;color:#fff;border-color:#b3262e}
+.drawer .dg{display:grid;grid-template-columns:repeat(auto-fit,minmax(340px,1fr));gap:12px;align-items:start;align-content:start;overflow:auto;flex:1;min-height:0}
+.drawer .dg>.off{display:none!important}
+.drawer .dg>.card.grow{grid-column:1/-1}
+.drawer .dg>.card.grow .tbs{max-height:calc(100vh - 340px)!important}
+.card.danger{border:2px solid #b3262e}
+.card.danger h2{color:#ff9a9a}
+.card.danger .row{display:grid;gap:6px;margin:12px 0;justify-items:start}
 </style>
 </head>
 <body>
@@ -221,14 +233,14 @@ html[data-theme=lys]{color-scheme:light;--bg:#f4efe4;--panel:#ffffff;--ink:#2630
 </div>
 <aside class="drawer" id="drawer" hidden aria-label="Innstillinger">
 <div class="dh"><h2>Innstillinger</h2><button class="ghost" id="close">Lukk</button></div>
+<div class="dtabs" id="dtabs" role="group" aria-label="Innstillinger"><button data-t="oppsett">Oppsett</button><button data-t="gevinster">Gevinster</button><button data-t="navn">Navn og registrering</button><button data-t="skjerm">Skjerm og data</button><button data-t="program">Program</button><button data-t="nullstill" class="red">Nullstill</button></div>
 <div class="dg">
-<div class="col">
-<section class="card">
+<section data-t="oppsett" class="card">
 <h2>Tittel</h2>
 <label>Overskrift som vises på skjermen<input id="title" type="text" placeholder="Julemessens lotteri"></label>
 <label style="display:block;margin-top:8px">Fargetema<select id="theme" style="width:100%;margin-top:2px;padding:6px 8px;border-radius:8px;border:2px solid var(--edge);background:var(--deep);color:var(--ink);font:inherit"><option value="klassisk">Klassisk jul (grønn og gull)</option><option value="rod">Rød jul</option><option value="natt">Vinternatt (blå)</option><option value="lys">Lys</option></select></label>
 </section>
-<section class="card">
+<section data-t="oppsett" class="card">
 <h2>Loddbøker</h2>
 <div class="f3">
 <label>Antall bøker<input id="books" type="number" min="1"></label>
@@ -238,46 +250,14 @@ html[data-theme=lys]{color-scheme:light;--bg:#f4efe4;--panel:#ffffff;--ink:#2630
 <label style="display:block;margin-top:10px;color:var(--ink)"><input type="checkbox" id="local" style="width:auto;margin:0 8px 0 0">Hver bok er nummerert fra 1 (f.eks. 1–50 i hver bok)</label>
 <p class="hint" id="bsum"></p>
 </section>
-<section class="card">
+<section data-t="oppsett" class="card">
 <h2>Åresalg</h2>
 <div class="f2">
 <label>Fra nummer<input id="aFrom" type="number" min="0"></label>
 <label>Til nummer<input id="aTo" type="number" min="0"></label>
 </div>
 </section>
-<section class="card" id="srvcard" hidden>
-<h2>Registrering fra flere PC-er og mobil</h2>
-<p class="hint">Åpne en av disse adressene i nettleseren på de andre PC-ene (samme nettverk). Navnene du skriver der dukker opp her med en gang.</p>
-<div id="srvurls" style="font-weight:800;margin-top:6px;word-break:break-all"></div>
-<div style="display:flex;gap:12px;align-items:center;margin-top:10px">
-<div id="srvqr" style="width:150px;height:150px;background:#fff;border-radius:8px;padding:4px;flex:none" aria-label="QR-kode til mobilsiden"></div>
-<div><p class="hint" style="margin:0">Skann med mobilen (samme wifi) for å sende bilde av et ark til PC-en.</p>
-<select id="srvsel" aria-label="Adresse i QR-koden" style="margin-top:6px;width:100%"></select>
-<p class="hint" id="srvfoto" style="margin-top:6px"></p>
-<p class="hint" id="verinfo" style="margin-top:6px"></p><button class="ghost" id="updchk" style="margin-top:4px">Se etter oppdatering</button> <button class="ghost" id="quitb" style="margin-top:4px">Avslutt programmet</button></div></div>
-</section>
-<section class="card">
-<h2>Egen skjerm for salen</h2>
-<p class="hint">Trykk «Åpne skjermvisning» i knappelinjen. Dra det nye vinduet over til skjerm 2 og trykk F eller dobbeltklikk for fullskjerm. Her på skjerm 1 styrer du, og salen ser bare skjerm 2.</p>
-<p class="hint">Snarveier: mellomrom eller Enter trekker, F gir fullskjerm, V skjuler eller viser styringen.</p>
-</section>
-<section class="card">
-<h2>Lagre til fil (CSV)</h2>
-<button class="ghost" id="dl">Last ned CSV</button>
-<button class="ghost" id="pick">Velg fil for autolagring</button>
-<p class="hint" id="csvmsg">CSV-filen åpnes i Excel. Med autolagring skrives alle trekninger til filen du velger hver gang noe endres (Chrome og Edge).</p>
-</section>
-<section class="card">
-<h2>Nullstill</h2>
-<button class="ghost" id="resettab">Slett trekninger i denne fanen</button>
-<p class="hint">Åresalg: start en ny runde når du skal trekke med nye nummer. Tidligere runder blir med i CSV-filen.</p>
-<button class="ghost" id="newround">Ny åresalgsrunde</button>
-<p class="hint">Sletter trekninger i alle faner, også loddbøkene:</p>
-<button class="ghost" id="reset">Slett alle trekninger</button>
-</section>
-</div>
-<div class="col">
-<section class="card grow" id="pcard">
+<section data-t="gevinster" class="card grow" id="pcard">
 <button class="ghost" id="pmax">⤢ Maksimer</button>
 <h2>Gevinster</h2>
 <div class="tbs"><table class="tb" id="ptb"></table></div>
@@ -287,9 +267,24 @@ html[data-theme=lys]{color-scheme:light;--bg:#f4efe4;--panel:#ffffff;--ink:#2630
 <textarea id="ppaste" style="min-height:70px"></textarea></p>
 <button class="ghost" id="pimp">Legg listen til</button> <button class="ghost" id="pclr">Tøm alle gevinster</button>
 </section>
-</div>
-<div class="col">
-<section class="card grow" id="ncard">
+<section data-t="navn" class="card" id="regcard">
+<h2>Navn på lodd og bøker</h2>
+<p id="regcount" style="font-size:22px;font-weight:800;margin:2px 0 6px"></p>
+<div style="height:10px;border-radius:6px;background:var(--deep);overflow:hidden"><i id="regfill" style="display:block;height:100%;width:0;background:#4caf7d"></i></div>
+<p class="hint" id="reghint">Navn skrives på registreringssiden. Den åpner i eget vindu og oppdateres med en gang når andre legger inn navn. Der finnes fyllhåndtak, angre og bilder fra mobil.</p>
+<button id="regopen" style="margin-top:10px;padding:12px 20px;font:inherit;font-size:18px;font-weight:800;border-radius:10px;border:0;background:#1d6b46;color:#fff;cursor:pointer">Åpne registrering</button>
+</section>
+<section data-t="navn" class="card" id="srvcard" hidden>
+<h2>Registrering fra flere PC-er og mobil</h2>
+<p class="hint">Åpne en av disse adressene i nettleseren på de andre PC-ene (samme nettverk). Navnene du skriver der dukker opp her med en gang.</p>
+<div id="srvurls" style="font-weight:800;margin-top:6px;word-break:break-all"></div>
+<div style="display:flex;gap:12px;align-items:center;margin-top:10px">
+<div id="srvqr" style="width:150px;height:150px;background:#fff;border-radius:8px;padding:4px;flex:none" aria-label="QR-kode til mobilsiden"></div>
+<div><p class="hint" style="margin:0">Skann med mobilen (samme wifi) for å sende bilde av et ark til PC-en.</p>
+<select id="srvsel" aria-label="Adresse i QR-koden" style="margin-top:6px;width:100%"></select>
+<p class="hint" id="srvfoto" style="margin-top:6px"></p></div></div>
+</section>
+<section data-t="navn" class="card grow" id="ncard">
 <button class="ghost" id="nmax">⤢ Maksimer</button>
 <h2 id="nh">Hvem har nummeret?</h2>
 <p class="hint" id="nhint"></p>
@@ -304,11 +299,42 @@ html[data-theme=lys]{color-scheme:light;--bg:#f4efe4;--panel:#ffffff;--ink:#2630
 <p class="hint">Tabellen gjelder fanen du har valgt. Når noe trekkes, fylles navnet inn automatisk hvis det står i tabellen.</p>
 </div>
 </section>
-<section class="card" id="acard" hidden>
+<section data-t="navn" class="card" id="acard" hidden>
 <h2>Åresalg</h2>
 <p class="hint">Åresalg bruker ingen lister. Etter hver trekning skriver du gevinst og navn rett i feltene nederst på hovedsiden. Gevinstlisten til venstre gjelder bare loddbøkene.</p>
 </section>
-</div>
+<section data-t="skjerm" class="card">
+<h2>Egen skjerm for salen</h2>
+<p class="hint">Trykk «Åpne skjermvisning» i knappelinjen. Dra det nye vinduet over til skjerm 2 og trykk F eller dobbeltklikk for fullskjerm. Her på skjerm 1 styrer du, og salen ser bare skjerm 2.</p>
+<p class="hint">Snarveier: mellomrom eller Enter trekker, F gir fullskjerm, V skjuler eller viser styringen.</p>
+</section>
+<section data-t="skjerm" class="card">
+<h2>Lagre til fil (CSV)</h2>
+<button class="ghost" id="dl">Last ned CSV</button>
+<button class="ghost" id="pick">Velg fil for autolagring</button>
+<p class="hint" id="csvmsg">CSV-filen åpnes i Excel. Med autolagring skrives alle trekninger til filen du velger hver gang noe endres (Chrome og Edge).</p>
+</section>
+<section data-t="program" class="card" id="progcard">
+<h2>Program</h2>
+<p class="hint" id="verinfo"></p>
+<p><button class="ghost" id="updchk">Se etter oppdatering</button></p>
+<p class="hint">Oppdateringen henter siste versjon fra GitHub, bytter filene og starter programmet på nytt. Navn og trekninger beholdes.</p>
+<p><button class="ghost" id="quitb">Avslutt programmet</button></p>
+</section>
+<section data-t="nullstill" class="card danger">
+<h2>Nullstill</h2>
+<p class="hint">Hver knapp må trykkes to ganger. Dette kan ikke angres. CSV-filen og sikkerhetskopiene i data-mappen beholdes.</p>
+<div class="row"><b>Trekninger</b>
+<button class="ghost" id="resettab">Slett trekninger i denne fanen</button>
+<button class="ghost" id="reset">Slett alle trekninger</button>
+<p class="hint">«Denne fanen» er den du har valgt på hovedsiden (lodd, loddbok eller åresalg). «Alle» sletter i alle fanene.</p></div>
+<div class="row"><b>Åresalg</b>
+<button class="ghost" id="newround">Ny åresalgsrunde</button>
+<p class="hint">Start en ny runde når du skal trekke med nye nummer. Tidligere runder blir med i CSV-filen.</p></div>
+<div class="row"><b>Navn</b>
+<button class="ghost" id="clrreg">Tøm alle navn på loddbøkene/loddene</button>
+<p class="hint">Tømmer hele navnelisten som registreres på registreringssiden.</p></div>
+</section>
 </div>
 </aside>
 
@@ -448,7 +474,7 @@ twoStep("undo","Angre trekk",function(){
  if(e){undone={e:e,i:st.drawn.indexOf(e)};st.drawn.splice(undone.i,1);sel=null;choice=-2;$("redo").hidden=false;save();render()}
 },"Fjerne siste trekning? Trykk igjen");
 $("redo").onclick=function(){if(undone){st.drawn.splice(Math.min(undone.i,st.drawn.length),0,undone.e);sel=undone.e.id;undone=null;$("redo").hidden=true;save();render()}};
-$("set").onclick=function(){fillSettings();$("drawer").hidden=false};
+$("set").onclick=function(){fillSettings();$("drawer").hidden=false;applyTabs()};
 $("close").onclick=function(){$("drawer").hidden=true;render()};
 ["books","per","start","aFrom","aTo"].forEach(function(i){$(i).onchange=readCfg});
 function mk(t){return document.createElement(t)}
@@ -977,6 +1003,35 @@ $("qrb").onclick=openQr;
 $("qrclose").onclick=function(){$("qrdlg").hidden=true};
 $("qrdlg").addEventListener("mousedown",function(ev){if(ev.target===$("qrdlg"))$("qrdlg").hidden=true});
 document.addEventListener("keydown",function(ev){if(ev.key==="Escape"&&!$("qrdlg").hidden)$("qrdlg").hidden=true});
+var curTab="oppsett";try{curTab=localStorage.getItem("julelotteri-fane")||curTab}catch(e){}
+function regCount(){
+ var tx=$("regcount");if(!tx)return;
+ var loc=st.local!==false,m=loc?"book":"ticket",rows=st.tbl[m]||[],tot=st.books*st.per,n=0,cnt={},whole={},i,r,b;
+ for(i=0;i<rows.length;i++){
+  r=rows[i];if(!r.v)continue;
+  if(loc){if(r.p)cnt[r.k]=(cnt[r.k]||0)+1;else whole[r.k]=1}
+  else if(r.k>=st.start&&r.k<st.start+tot)n++;
+ }
+ if(loc)for(b=1;b<=st.books;b++)n+=whole[b]?st.per:Math.min(cnt[b]||0,st.per);
+ tx.textContent=n+" av "+tot+" "+(loc?"plasser i bøkene":"lodd")+" har navn";
+ $("regfill").style.width=(tot?Math.min(100,Math.round(n*100/tot)):0)+"%";
+ $("regopen").hidden=!srv.on;
+ $("reghint").textContent=srv.on?"Navn skrives på registreringssiden. Den åpner i eget vindu og oppdateres med en gang når andre legger inn navn. Der finnes fyllhåndtak, angre og bilder fra mobil.":"Registreringssiden finnes bare når programmet er startet med ikonet Julemessetrekning (eller start.bat). Til da kan du bruke tabellen under.";
+}
+function applyTabs(){
+ var b=document.querySelectorAll("#dtabs button"),i,s2,on;
+ for(i=0;i<b.length;i++)b[i].setAttribute("aria-pressed",b[i].getAttribute("data-t")===curTab?"true":"false");
+ s2=document.querySelectorAll("#drawer .dg>[data-t]");
+ for(i=0;i<s2.length;i++){on=s2[i].getAttribute("data-t")===curTab;if(s2[i].id==="ncard")on=on&&!srv.on;s2[i].classList.toggle("off",!on)}
+ regCount();
+}
+(function(){
+ var b=document.querySelectorAll("#dtabs button"),i;
+ for(i=0;i<b.length;i++)b[i].onclick=function(){curTab=this.getAttribute("data-t");try{localStorage.setItem("julelotteri-fane",curTab)}catch(e){}applyTabs()};
+ $("regopen").onclick=function(){window.open("/registrer","julelotteri-registrer")};
+ setInterval(function(){if(!$("drawer").hidden)regCount()},1500);
+})();
+twoStep("clrreg","Tøm alle navn på loddbøkene/loddene",function(){var m=st.local!==false?"book":"ticket";st.tbl[m]=[];srvOps([{op:"del",m:m,all:true}]);save();drawNames();regCount()});
 var updDismissed="";
 function updCheck(manual){
  var vi=$("verinfo");
@@ -1051,6 +1106,7 @@ function srvStart(){
    if(!(i.urls||[]).length)box.textContent="Fant ingen nettverksadresse. Er PC-en koblet til nettverket?";
    $("srvcard").hidden=false;
    if(i.version)$("verinfo").textContent="Versjon "+i.version;
+   applyTabs();
    updCheck(false);
   }).catch(function(){});
   $("csvmsg").textContent="Serveren lagrer automatisk alle trekninger til data/trekninger.csv i programmappen. Du trenger ikke velge fil. «Last ned CSV» virker som før.";
