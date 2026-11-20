@@ -254,7 +254,7 @@ html[data-theme=lys]{color-scheme:light;--bg:#f4efe4;--panel:#ffffff;--ink:#2630
 <div><p class="hint" style="margin:0">Skann med mobilen (samme wifi) for å sende bilde av et ark til PC-en.</p>
 <select id="srvsel" aria-label="Adresse i QR-koden" style="margin-top:6px;width:100%"></select>
 <p class="hint" id="srvfoto" style="margin-top:6px"></p>
-<p class="hint" id="verinfo" style="margin-top:6px"></p><button class="ghost" id="updchk" style="margin-top:4px">Se etter oppdatering</button></div></div>
+<p class="hint" id="verinfo" style="margin-top:6px"></p><button class="ghost" id="updchk" style="margin-top:4px">Se etter oppdatering</button> <button class="ghost" id="quitb" style="margin-top:4px">Avslutt programmet</button></div></div>
 </section>
 <section class="card">
 <h2>Egen skjerm for salen</h2>
@@ -1012,6 +1012,13 @@ function updRun(d){
  }).catch(function(e){fail(e.message||"Kunne ikke starte oppdateringen.")});
 }
 $("updchk").onclick=function(){updCheck(true)};
+$("quitb").onclick=function(){
+ if(!confirm("Avslutte programmet?\n\nAlle registreringer er lagret. De andre PC-ene og mobilene mister kontakten til programmet startes igjen."))return;
+ fetch("/api/quit",{method:"POST"}).then(function(r){
+  if(!r.ok)throw 0;
+  var ov=$("updOv");ov.hidden=false;$("updBig").textContent="Programmet er avsluttet";$("updSmall").textContent="Du kan lukke denne fanen. Start igjen med ikonet «Julemessetrekning».";$("updFill").style.width="100%";
+ }).catch(function(){alert("Avslutting virker bare fra PC-en som kjører programmet.")});
+};
 function srvStart(){
  if(view||location.protocol!=="http:"||!window.JLShared||!window.fetch||!window.EventSource)return;
  fetch("/api/state").then(function(r){if(!r.ok)throw 0;return r.json()}).then(function(d){

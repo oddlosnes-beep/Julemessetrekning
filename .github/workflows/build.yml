@@ -1,0 +1,64 @@
+name: Bygg Julemessetrekning-Setup
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Samle programfilene og Node.js
+        shell: pwsh
+        run: |
+          New-Item -ItemType Directory -Force publish | Out-Null
+          Get-ChildItem -File | Where-Object { $_.Name -notin @('install.bat','start.bat','README.md','.gitignore') } | Copy-Item -Destination publish
+          Copy-Item README.md publish
+          # Siste Node 22 (LTS) fra nodejs.org. Kopieres som Julemessetrekning.exe slik at det vises med riktig navn i Oppgavebehandling.
+          $idx = Invoke-RestMethod https://nodejs.org/dist/index.json
+          $v = ($idx | Where-Object { $_.version -like 'v22.*' } | Select-Object -First 1).version
+          Write-Host "Node $v"
+          Invoke-WebRequest "https://nodejs.org/dist/$v/node-$v-win-x64.zip" -OutFile node.zip
+          Expand-Archive node.zip -DestinationPath nodezip
+          Copy-Item (Get-ChildItem nodezip -Recurse -Filter node.exe | Select-Object -First 1).FullName publish\Julemessetrekning.exe
+          Get-ChildItem publish
+
+      - name: Sjekk at filene er med
+        shell: pwsh
+        run: |
+          foreach ($f in 'Julemessetrekning.exe','server.js','shared.js','julelotteri.html','registrer.html','mobil.html','qr.js','start.vbs','icon.ico','version.txt') {
+            if (-not (Test-Path "publish\$f")) { throw "Mangler $f" }
+          }
+          .\publish\Julemessetrekning.exe --version
+
+      - name: Versjon
+        shell: pwsh
+        run: |
+          $v = (Get-Content version.txt -Raw).Trim()
+          "VERSION=$v" | Out-File -FilePath $env:GITHUB_ENV -Append -Encoding utf8
+
+      - name: Installer Inno Setup
+        shell: pwsh
+        run: choco install innosetup -y --no-progress
+
+      - name: Bygg Setup.exe
+        shell: pwsh
+        run: |
+          & "${env:ProgramFiles(x86)}\Inno Setup 6\ISCC.exe" "/DAppVersion=$env:VERSION" installer\Julemessetrekning.iss
+          if ($LASTEXITCODE -ne 0) { throw "ISCC feilet" }
+
+      - name: Lag utgave
+        shell: bash
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          gh release delete "v$VERSION" --yes --cleanup-tag 2>/dev/null || true
+          gh release create "v$VERSION" installer/Output/Julemessetrekning-Setup.exe \
+            --title "Julemessetrekning $VERSION" \
+            --notes "Last ned Julemessetrekning-Setup.exe, dobbeltklikk og følg veiviseren. Programmet oppdaterer seg selv senere."

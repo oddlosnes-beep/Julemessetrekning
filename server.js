@@ -8,12 +8,40 @@ const os = require("os");
 const https = require("https");
 const zlib = require("zlib");
 const vm = require("vm");
+const { spawn } = require("child_process");
 const shared = require("./shared.js");
 
-const PORT = parseInt(process.env.PORT || process.argv[2] || "3000", 10);
-const DATA = process.env.JL_DATA || path.join(__dirname, "data");
+// Flagg (brukes av snarveien som installasjonsfilen lager):
+//   --docs   data i Dokumenter\Julemessetrekning\data (ellers i mappen "data" ved programmet)
+//   --open   åpne nettleseren (eller bare åpne siden hvis programmet allerede kjører)
+//   --self   programmet kan oppdatere og starte seg selv på nytt (uten start.bat)
+//   --quiet  skriv meldinger til data\server.log i stedet for til vinduet
+//   --wait   (internt) vent på at porten blir ledig etter en omstart
+const ARGS = process.argv.slice(2);
+const FLAG = function (n) { return ARGS.indexOf(n) >= 0; };
+const PORT = parseInt(process.env.PORT || ARGS.filter(function (a) { return /^\d+$/.test(a); })[0] || "3000", 10);
+function docsDir() {
+  const h = os.homedir(), c = [path.join(h, "Documents"), path.join(h, "OneDrive", "Documents"), path.join(h, "OneDrive", "Dokumenter")];
+  for (let i = 0; i < c.length; i++) if (fs.existsSync(c[i])) return path.join(c[i], "Julemessetrekning", "data");
+  return path.join(c[0], "Julemessetrekning", "data");
+}
+const DATA = process.env.JL_DATA || (FLAG("--docs") ? docsDir() : path.join(__dirname, "data"));
 const BACKUP = path.join(DATA, "backup");
 fs.mkdirSync(BACKUP, { recursive: true });
+if (FLAG("--quiet")) {
+  const LOG = path.join(DATA, "server.log");
+  try { if (fs.statSync(LOG).size > 500000) fs.renameSync(LOG, LOG + ".old"); } catch (e) {}
+  const put = function () { try { fs.appendFileSync(LOG, new Date().toISOString() + " " + Array.prototype.slice.call(arguments).join(" ") + "\n"); } catch (e) {} };
+  console.log = put; console.error = put;
+}
+function openBrowser() {
+  const url = "http://localhost:" + PORT;
+  try {
+    const c = process.platform === "win32" ? spawn("explorer.exe", [url], { detached: true, stdio: "ignore" })
+      : spawn(process.platform === "darwin" ? "open" : "xdg-open", [url], { detached: true, stdio: "ignore" });
+    c.on("error", function () {}); c.unref();
+  } catch (e) {}
+}
 
 const PAGES = {
   "/": "julelotteri.html",
@@ -148,7 +176,8 @@ function lanUrls() {
 const REPO = "oddlosnes-beep/Julemessetrekning";
 const RAW_VERSION = process.env.JL_UPDATE_RAW || ("https://raw.githubusercontent.com/" + REPO + "/main/version.txt");
 const ZIP_URL = process.env.JL_UPDATE_ZIP || ("https://codeload.github.com/" + REPO + "/zip/refs/heads/main");
-const SKIP_UPDATE = /^(data\/|start\.bat$|install\.bat$|\.gitignore$)/;
+const SKIP_UPDATE = /^(data\/|start\.bat$|install\.bat$|\.gitignore$|\.github\/|installer\/)/;
+const CAN_AUTO = process.env.JL_LOOP === "1" || FLAG("--self");
 function localVersion() { try { return fs.readFileSync(path.join(__dirname, "version.txt"), "utf8").trim() || "ukjent"; } catch (e) { return "ukjent"; } }
 const VERSION = localVersion();
 const upd = { stage: "", error: "", busy: false };
@@ -196,6 +225,12 @@ function checkJs(name, data) {
   if (/\.js$/.test(name)) new vm.Script(data.toString("utf8"), { filename: name });
   if (/\.html$/.test(name)) { const m = data.toString("utf8").match(/<script>([\s\S]*)<\/script>/); if (m) new vm.Script(m[1], { filename: name }); }
 }
+function restartSelf() {
+  try { flush(); backup(); } catch (e) {}
+  const args = [__filename].concat(ARGS.filter(function (a) { return a !== "--open" && a !== "--wait"; })).concat(["--wait"]);
+  try { spawn(process.execPath, args, { cwd: __dirname, detached: true, stdio: "ignore", windowsHide: true, env: process.env }).unref(); } catch (e) { console.error("Kunne ikke starte på nytt:", e); return; }
+  process.exit(0);
+}
 async function runUpdate() {
   upd.busy = true; upd.error = ""; upd.stage = "Laster ned";
   try {
@@ -223,7 +258,7 @@ async function runUpdate() {
       fs.writeFileSync(dst + ".ny", a[1]); fs.renameSync(dst + ".ny", dst);
     });
     upd.stage = "Starter på nytt";
-    setTimeout(function () { try { flush(); backup(); } catch (e) {} process.exit(42); }, 1200);
+    setTimeout(function () { if (FLAG("--self")) restartSelf(); else { try { flush(); backup(); } catch (e) {} process.exit(42); } }, 1200);
   } catch (e) { upd.error = String(e && e.message || e); upd.stage = ""; upd.busy = false; console.error("Oppdatering feilet:", upd.error); }
 }
 
@@ -242,21 +277,22 @@ const server = http.createServer(function (req, res) {
   if (req.method === "GET" && url === "/api/state") {
     return json(res, 200, { tbl: state.tbl, cfg: state.cfg, rev: state.rev });
   }
-  if (url.indexOf("/api/update/") === 0 || url === "/api/version") {
+  if (url.indexOf("/api/update/") === 0 || url === "/api/version" || url === "/api/quit") {
     if (!isLocal(req)) return json(res, 403, { error: "Bare fra denne PC-en" });
-    if (url === "/api/version") return json(res, 200, { version: VERSION, canAuto: process.env.JL_LOOP === "1" });
+    if (req.method === "POST" && url === "/api/quit") { json(res, 200, { ok: true }); setTimeout(bye, 300); return; }
+    if (url === "/api/version") return json(res, 200, { version: VERSION, canAuto: CAN_AUTO });
     if (req.method === "GET" && url === "/api/update/check") {
       getBuf(RAW_VERSION + (RAW_VERSION.indexOf("?") < 0 ? "?t=" + Date.now() : ""), 1000)
         .then(function (b) {
           const latest = b.toString("utf8").trim();
-          json(res, 200, { current: VERSION, latest: latest, newer: !!latest && latest !== VERSION && /^[\w.-]{1,40}$/.test(latest), canAuto: process.env.JL_LOOP === "1", error: false });
+          json(res, 200, { current: VERSION, latest: latest, newer: !!latest && latest !== VERSION && /^[\w.-]{1,40}$/.test(latest), canAuto: CAN_AUTO, error: false });
         })
         .catch(function () { json(res, 200, { current: VERSION, latest: "", newer: false, canAuto: false, error: true }); });
       return;
     }
     if (req.method === "GET" && url === "/api/update/status") return json(res, 200, { stage: upd.stage, error: upd.error, busy: upd.busy });
     if (req.method === "POST" && url === "/api/update/install") {
-      if (process.env.JL_LOOP !== "1") return json(res, 400, { error: "Programmet er ikke startet med start.bat. Kjør install.bat for å oppdatere." });
+      if (!CAN_AUTO) return json(res, 400, { error: "Programmet er ikke startet med snarveien eller start.bat. Installer på nytt for å oppdatere." });
       if (upd.busy) return json(res, 409, { error: "Oppdatering pågår allerede" });
       runUpdate(); return json(res, 200, { ok: true });
     }
@@ -354,9 +390,13 @@ const server = http.createServer(function (req, res) {
   res.end("Ikke funnet");
 });
 
+let tries = 0;
 server.on("error", function (e) {
-  if (e.code === "EADDRINUSE") console.error("\nPort " + PORT + " er allerede i bruk. Er programmet startet fra før? Lukk det andre vinduet, eller bruk en annen port:  node server.js 3001");
-  else console.error(e);
+  if (e.code === "EADDRINUSE") {
+    if (FLAG("--wait") && tries++ < 40) { setTimeout(function () { server.listen(PORT, "0.0.0.0"); }, 500); return; }
+    if (FLAG("--open")) { openBrowser(); process.exit(0); }
+    console.error("\nPort " + PORT + " er allerede i bruk. Er programmet startet fra før? Lukk det andre vinduet, eller bruk en annen port:  node server.js 3001");
+  } else console.error(e);
   process.exit(1);
 });
 server.listen(PORT, "0.0.0.0", function () {
@@ -367,6 +407,7 @@ server.listen(PORT, "0.0.0.0", function () {
   else console.log("  (Fant ingen nettverksadresse. Er PC-en koblet til nettverket?)");
   console.log("\n  Data lagres i mappen: " + DATA);
   console.log("  Lukk dette vinduet (eller trykk Ctrl+C) for å stoppe.\n");
+  if (FLAG("--open") && !FLAG("--wait")) openBrowser();
 });
 function bye() { flush(); backup(); process.exit(0); }
 process.on("SIGINT", bye);

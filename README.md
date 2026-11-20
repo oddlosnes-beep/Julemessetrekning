@@ -1,16 +1,22 @@
 # Julelotteri med flere PC-er
 
-## Installasjon fra GitHub
-- Last ned install.bat fra repoet og dobbeltklikk den. Den installerer/oppdaterer i Dokumenter\Julemessetrekning
-  og lager snarvei på skrivebordet. Kjør den igjen for å oppdatere (data-mappen røres ikke).
+## Installasjon (enklest)
+1. Åpne siden «Releases» i dette repoet og last ned **Julemessetrekning-Setup.exe** fra den nyeste utgaven.
+2. Dobbeltklikk den og følg veiviseren (ingen administratorrettigheter trengs). Node.js trenger du ikke installere, det følger med.
+3. Start med ikonet **Julemessetrekning** på skrivebordet. Nettleseren åpner trekningssiden av seg selv. Det kommer ikke noe svart vindu.
+4. Første gang spør Windows om brannmuren. Velg «Tillat» for private nettverk, ellers får ikke de andre PC-ene og mobilene kontakt.
+- Dataene (navn, trekninger, bilder) ligger i Dokumenter\Julemessetrekning\data.
+- Avslutte: «Avslutt programmet» i Innstillinger på trekningssiden. Ikonet kan trykkes igjen når som helst, da åpnes bare siden på nytt.
+- Feilmeldinger står i data\server.log.
+- Alternativ uten installasjonsfil: install.bat (laster ned zip fra GitHub og krever at Node.js er installert) og start.bat.
 
 ## Oppdatering
 - Når trekningssiden åpnes sjekker programmet GitHub. Finnes det en ny versjon, kommer det et gult banner øverst med «Oppdater nå».
 - Ett klikk laster ned, bytter filene og starter programmet på nytt av seg selv. Navn, trekninger og bilder (mappen data) beholdes.
   De gamle filene lagres i data\backup\program-<versjon>.
 - Skjermvisningen (vindu 2) må åpnes på nytt etterpå. Ikke oppdater midt i en trekning.
-- Det virker bare når programmet er startet med start.bat, og bare fra PC-en som kjører det.
-  start.bat og install.bat oppdateres ikke automatisk. Kjør install.bat på nytt hvis de er endret.
+- Det virker bare når programmet er startet med ikonet (eller start.bat), og bare fra PC-en som kjører det.
+  start.bat og install.bat oppdateres ikke automatisk.
 - Utviklere: øk tallet i version.txt for hver utgave. Alle PC-er med et annet tall i filen får tilbudet.
 
 ## Slik starter du

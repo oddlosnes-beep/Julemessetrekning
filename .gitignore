@@ -2,3 +2,5 @@
 data/
 *.csv
 node_modules/
+publish/
+installer/Output/
