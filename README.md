@@ -4,6 +4,15 @@
 - Last ned install.bat fra repoet og dobbeltklikk den. Den installerer/oppdaterer i Dokumenter\Julemessetrekning
   og lager snarvei på skrivebordet. Kjør den igjen for å oppdatere (data-mappen røres ikke).
 
+## Oppdatering
+- Når trekningssiden åpnes sjekker programmet GitHub. Finnes det en ny versjon, kommer det et gult banner øverst med «Oppdater nå».
+- Ett klikk laster ned, bytter filene og starter programmet på nytt av seg selv. Navn, trekninger og bilder (mappen data) beholdes.
+  De gamle filene lagres i data\backup\program-<versjon>.
+- Skjermvisningen (vindu 2) må åpnes på nytt etterpå. Ikke oppdater midt i en trekning.
+- Det virker bare når programmet er startet med start.bat, og bare fra PC-en som kjører det.
+  start.bat og install.bat oppdateres ikke automatisk. Kjør install.bat på nytt hvis de er endret.
+- Utviklere: øk tallet i version.txt for hver utgave. Alle PC-er med et annet tall i filen får tilbudet.
+
 ## Slik starter du
 1. Installer Node.js én gang på PC-en som skal være "trekke-PC" (https://nodejs.org, velg LTS).
 2. Dobbeltklikk start.bat. Et svart vindu åpnes (la det stå åpent), og nettleseren åpner trekningssiden.

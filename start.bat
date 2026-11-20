@@ -12,8 +12,16 @@ if errorlevel 1 (
   exit /b 1
 )
 echo Starter julelotteriet ...
+set JL_LOOP=1
 start "" "http://localhost:3000"
+:kjor
 node server.js
+rem Kode 42 = programmet har oppdatert seg selv og skal starte pa nytt
+if %errorlevel%==42 (
+  echo.
+  echo Oppdatert. Starter pa nytt ...
+  goto kjor
+)
 echo.
 echo Serveren er stoppet.
 pause

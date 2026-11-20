@@ -5,6 +5,9 @@ const http = require("http");
 const fs = require("fs");
 const path = require("path");
 const os = require("os");
+const https = require("https");
+const zlib = require("zlib");
+const vm = require("vm");
 const shared = require("./shared.js");
 
 const PORT = parseInt(process.env.PORT || process.argv[2] || "3000", 10);
@@ -137,6 +140,93 @@ function lanUrls() {
   return list.map(function (x) { return x.url; });
 }
 
+
+// ---------- Oppdatering fra GitHub (som i Sangvisning) ----------
+// Siden spør serveren om det finnes en nyere versjon. Den som styrer trekningen trykker "Oppdater nå".
+// Da lastes zip-filen fra GitHub ned, filene byttes (data-mappen røres ikke) og programmet starter på nytt.
+// Omstart skjer ved at serveren avslutter med kode 42, og start.bat starter den på nytt (JL_LOOP=1 settes av start.bat).
+const REPO = "oddlosnes-beep/Julemessetrekning";
+const RAW_VERSION = process.env.JL_UPDATE_RAW || ("https://raw.githubusercontent.com/" + REPO + "/main/version.txt");
+const ZIP_URL = process.env.JL_UPDATE_ZIP || ("https://codeload.github.com/" + REPO + "/zip/refs/heads/main");
+const SKIP_UPDATE = /^(data\/|start\.bat$|install\.bat$|\.gitignore$)/;
+function localVersion() { try { return fs.readFileSync(path.join(__dirname, "version.txt"), "utf8").trim() || "ukjent"; } catch (e) { return "ukjent"; } }
+const VERSION = localVersion();
+const upd = { stage: "", error: "", busy: false };
+
+function isLocal(req) {
+  const a = (req.socket.remoteAddress || "").replace(/^::ffff:/, "");
+  if (a === "127.0.0.1" || a === "::1") return true;
+  const nets = os.networkInterfaces();
+  return Object.keys(nets).some(function (n) { return (nets[n] || []).some(function (x) { return x.address === a; }); });
+}
+function getBuf(url, maxBytes, hops) {
+  return new Promise(function (resolve, reject) {
+    const mod = url.indexOf("https:") === 0 ? https : http;
+    const rq = mod.get(url, { headers: { "User-Agent": "Julemessetrekning-oppdatering" } }, function (r) {
+      if (r.statusCode >= 300 && r.statusCode < 400 && r.headers.location && (hops || 0) < 5) {
+        r.resume(); return resolve(getBuf(new URL(r.headers.location, url).toString(), maxBytes, (hops || 0) + 1));
+      }
+      if (r.statusCode !== 200) { r.resume(); return reject(new Error("GitHub svarte " + r.statusCode)); }
+      const parts = []; let n = 0;
+      r.on("data", function (c) { n += c.length; if (n > maxBytes) { rq.destroy(new Error("For stor fil")); return; } parts.push(c); });
+      r.on("end", function () { resolve(Buffer.concat(parts)); });
+      r.on("error", reject);
+    });
+    rq.setTimeout(30000, function () { rq.destroy(new Error("Tidsavbrudd")); });
+    rq.on("error", reject);
+  });
+}
+function unzip(buf) {
+  let e = buf.length - 22;
+  while (e >= 0 && buf.readUInt32LE(e) !== 0x06054b50) e--;
+  if (e < 0) throw new Error("Ugyldig zip-fil");
+  const n = buf.readUInt16LE(e + 10); let p = buf.readUInt32LE(e + 16); const out = new Map();
+  for (let i = 0; i < n; i++) {
+    if (buf.readUInt32LE(p) !== 0x02014b50) throw new Error("Ugyldig zip-fil");
+    const method = buf.readUInt16LE(p + 10), csize = buf.readUInt32LE(p + 20), nl = buf.readUInt16LE(p + 28), el = buf.readUInt16LE(p + 30), cl = buf.readUInt16LE(p + 32), lo = buf.readUInt32LE(p + 42);
+    const name = buf.toString("utf8", p + 46, p + 46 + nl); p += 46 + nl + el + cl;
+    if (name.endsWith("/")) continue;
+    if (buf.readUInt32LE(lo) !== 0x04034b50) throw new Error("Ugyldig zip-fil");
+    const st = lo + 30 + buf.readUInt16LE(lo + 26) + buf.readUInt16LE(lo + 28), raw = buf.subarray(st, st + csize);
+    out.set(name, method === 0 ? raw : zlib.inflateRawSync(raw));
+  }
+  return out;
+}
+function checkJs(name, data) {
+  if (/\.js$/.test(name)) new vm.Script(data.toString("utf8"), { filename: name });
+  if (/\.html$/.test(name)) { const m = data.toString("utf8").match(/<script>([\s\S]*)<\/script>/); if (m) new vm.Script(m[1], { filename: name }); }
+}
+async function runUpdate() {
+  upd.busy = true; upd.error = ""; upd.stage = "Laster ned";
+  try {
+    const files = unzip(await getBuf(ZIP_URL, 60 * 1024 * 1024));
+    upd.stage = "Kontrollerer";
+    const apply = [];
+    files.forEach(function (data, full) {
+      const rel = full.split("/").slice(1).join("/");
+      if (!rel || SKIP_UPDATE.test(rel)) return;
+      if (rel.split("/").some(function (x) { return x === ".." || x === ""; })) throw new Error("Uventet filnavn i oppdateringen");
+      checkJs(rel, data); apply.push([rel, data]);
+    });
+    const names = apply.map(function (a) { return a[0]; });
+    ["server.js", "shared.js", "julelotteri.html", "registrer.html", "mobil.html", "version.txt"].forEach(function (f) { if (names.indexOf(f) < 0) throw new Error("Oppdateringen mangler " + f); });
+    upd.stage = "Bytter filer";
+    const bk = path.join(BACKUP, "program-" + VERSION.replace(/[^\w.-]/g, "_"));
+    fs.mkdirSync(bk, { recursive: true });
+    apply.forEach(function (a) {
+      const dst = path.join(__dirname, a[0]);
+      if (fs.existsSync(dst)) { fs.mkdirSync(path.dirname(path.join(bk, a[0])), { recursive: true }); fs.copyFileSync(dst, path.join(bk, a[0])); }
+    });
+    apply.forEach(function (a) {
+      const dst = path.join(__dirname, a[0]);
+      fs.mkdirSync(path.dirname(dst), { recursive: true });
+      fs.writeFileSync(dst + ".ny", a[1]); fs.renameSync(dst + ".ny", dst);
+    });
+    upd.stage = "Starter på nytt";
+    setTimeout(function () { try { flush(); backup(); } catch (e) {} process.exit(42); }, 1200);
+  } catch (e) { upd.error = String(e && e.message || e); upd.stage = ""; upd.busy = false; console.error("Oppdatering feilet:", upd.error); }
+}
+
 // ---------- Server ----------
 const server = http.createServer(function (req, res) {
   const url = req.url.split("?")[0];
@@ -152,8 +242,27 @@ const server = http.createServer(function (req, res) {
   if (req.method === "GET" && url === "/api/state") {
     return json(res, 200, { tbl: state.tbl, cfg: state.cfg, rev: state.rev });
   }
+  if (url.indexOf("/api/update/") === 0 || url === "/api/version") {
+    if (!isLocal(req)) return json(res, 403, { error: "Bare fra denne PC-en" });
+    if (url === "/api/version") return json(res, 200, { version: VERSION, canAuto: process.env.JL_LOOP === "1" });
+    if (req.method === "GET" && url === "/api/update/check") {
+      getBuf(RAW_VERSION + (RAW_VERSION.indexOf("?") < 0 ? "?t=" + Date.now() : ""), 1000)
+        .then(function (b) {
+          const latest = b.toString("utf8").trim();
+          json(res, 200, { current: VERSION, latest: latest, newer: !!latest && latest !== VERSION && /^[\w.-]{1,40}$/.test(latest), canAuto: process.env.JL_LOOP === "1", error: false });
+        })
+        .catch(function () { json(res, 200, { current: VERSION, latest: "", newer: false, canAuto: false, error: true }); });
+      return;
+    }
+    if (req.method === "GET" && url === "/api/update/status") return json(res, 200, { stage: upd.stage, error: upd.error, busy: upd.busy });
+    if (req.method === "POST" && url === "/api/update/install") {
+      if (process.env.JL_LOOP !== "1") return json(res, 400, { error: "Programmet er ikke startet med start.bat. Kjør install.bat for å oppdatere." });
+      if (upd.busy) return json(res, 409, { error: "Oppdatering pågår allerede" });
+      runUpdate(); return json(res, 200, { ok: true });
+    }
+  }
   if (req.method === "GET" && url === "/api/info") {
-    return json(res, 200, { port: PORT, urls: lanUrls(), names: count() });
+    return json(res, 200, { port: PORT, urls: lanUrls(), names: count(), version: VERSION });
   }
   if (req.method === "GET" && url === "/api/events") {
     res.writeHead(200, {
