@@ -168,6 +168,14 @@ html[data-theme=lys]{color-scheme:light;--bg:#f4efe4;--panel:#ffffff;--ink:#2630
 .card.danger{border:2px solid #b3262e}
 .card.danger h2{color:#ff9a9a}
 .card.danger .row{display:grid;gap:6px;margin:12px 0;justify-items:start}
+.bar{flex-direction:column;align-items:stretch;gap:10px}
+.bgrp{display:flex;gap:10px;flex-wrap:wrap;align-items:center}
+.btools{padding-top:8px;border-top:1px solid #ffffff1a}
+.btools .ghost{padding:7px 14px;font-size:14px;opacity:.92}
+.btools .sep{width:1px;align-self:stretch;background:#ffffff30;margin:2px 4px}
+.btools .gap{flex:1}
+.btools #undo,.btools #redo{border-color:#c05a5a;color:#ffb4b4}
+.bdraw #wname{flex:1 1 220px}
 </style>
 </head>
 <body>
@@ -197,6 +205,7 @@ html[data-theme=lys]{color-scheme:light;--bg:#f4efe4;--panel:#ffffff;--ink:#2630
 </div>
 
 <div class="bar">
+<div class="bgrp bdraw">
 <select id="psel" aria-label="Gevinst"></select>
 <input id="pfree" placeholder="Gevinst (skriv inn)" aria-label="Gevinst" autocomplete="off" hidden>
 <button class="go" id="go">Trekk</button>
@@ -205,14 +214,18 @@ html[data-theme=lys]{color-scheme:light;--bg:#f4efe4;--panel:#ffffff;--ink:#2630
 <button class="ghost" id="more">Tlf og adresse</button>
 <input id="wtel" placeholder="Telefon" aria-label="Telefon" autocomplete="off" hidden>
 <input id="wadr" placeholder="Adresse" aria-label="Adresse" autocomplete="off" hidden>
+</div>
+<div class="bgrp btools">
 <button class="ghost" id="srch">Søk</button>
 <button class="ghost" id="qrb">QR til mobil</button>
-<button class="ghost" id="undo">Angre trekk</button>
-<button class="ghost" id="redo" hidden>Gjenopprett slettet trekning</button>
 <button class="ghost" id="set">Innstillinger</button>
+<span class="sep"></span>
 <button class="ghost" id="pop">Åpne skjermvisning</button>
 <button class="ghost" id="only">Kun visning</button>
 <button class="ghost" id="fs">Fullskjerm</button>
+<span class="gap"></span>
+<button class="ghost" id="redo" hidden>Gjenopprett slettet trekning</button>
+<button class="ghost" id="undo">Angre trekk</button>
 </div>
 </div>
 

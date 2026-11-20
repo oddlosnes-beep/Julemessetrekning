@@ -36,11 +36,21 @@ if (FLAG("--quiet")) {
 }
 function openBrowser() {
   const url = "http://localhost:" + PORT;
-  try {
-    const c = process.platform === "win32" ? spawn("explorer.exe", [url], { detached: true, stdio: "ignore" })
-      : spawn(process.platform === "darwin" ? "open" : "xdg-open", [url], { detached: true, stdio: "ignore" });
-    c.on("error", function () {}); c.unref();
-  } catch (e) {}
+  function go(cmd, args) {
+    try { const c = spawn(cmd, args, { detached: true, stdio: "ignore" }); c.on("error", function () {}); c.unref(); return true; } catch (e) { return false; }
+  }
+  if (process.platform === "win32") {
+    // Eget programvindu uten faner og adressefelt (Chrome eller Edge i app-modus), som i Sangvisning.
+    const e = process.env, pf = e["ProgramFiles"] || "C:\\Program Files", pf86 = e["ProgramFiles(x86)"] || "C:\\Program Files (x86)", la = e["LOCALAPPDATA"] || "";
+    const list = [
+      pf + "\\Google\\Chrome\\Application\\chrome.exe", pf86 + "\\Google\\Chrome\\Application\\chrome.exe", la + "\\Google\\Chrome\\Application\\chrome.exe",
+      pf86 + "\\Microsoft\\Edge\\Application\\msedge.exe", pf + "\\Microsoft\\Edge\\Application\\msedge.exe",
+    ];
+    for (let i = 0; i < list.length; i++) {
+      try { if (fs.existsSync(list[i]) && go(list[i], ["--app=" + url, "--start-maximized"])) return; } catch (x) {}
+    }
+    go("explorer.exe", [url]);
+  } else go(process.platform === "darwin" ? "open" : "xdg-open", [url]);
 }
 
 const PAGES = {
