@@ -16,6 +16,9 @@ main{flex:1;display:flex;flex-direction:column;justify-content:center;padding:16
 #info{font-size:22px;min-height:30px}
 button{font:inherit;font-weight:800;font-size:34px;padding:26px;border:0;border-radius:18px;background:var(--ok);color:#fff;width:100%}
 button:disabled{background:#9aa8a1}
+#ar input{font:inherit;width:90px;padding:8px;border:2px solid #b9c2bd;border-radius:10px;text-align:center}
+button.s{font-size:20px;padding:14px;margin-top:10px;background:#fff;color:var(--ink);border:2px solid #b9c2bd}
+button.s.r{color:var(--bad)}
 #msg{color:var(--bad);font-size:17px;min-height:22px}
 </style>
 </head>
@@ -27,6 +30,10 @@ button:disabled{background:#9aa8a1}
 <div id="info"></div>
 <button id="go" disabled>Trekk</button>
 <div id="msg"></div>
+<div id="ar" hidden style="margin-top:10px;padding-top:14px;border-top:1px solid #c5cec9;font-size:18px">
+<div>Åresalg: lodd nr <input id="af" type="number" min="0"> til <input id="at" type="number" min="0"></div>
+<button id="asave" class="s">Lagre antall</button>
+<button id="areset" class="s r">Nullstill åresalg</button></div>
 </main>
 <script>
 (function(){
@@ -41,6 +48,8 @@ function show(){
  $("go").disabled=!ok;
  $("go").textContent=st.left===0?"Alt er trukket":"Trekk";
  $("msg").textContent=st.on?"":"Trekking fra mobil er ikke slått på på PC-en.";
+ var ar=st.on&&st.mode==="ares";$("ar").hidden=!ar;
+ if(ar){if(document.activeElement!==$("af"))$("af").value=st.aFrom;if(document.activeElement!==$("at"))$("at").value=st.aTo}
 }
 function poll(){
  fetch("/api/trekk").then(function(r){return r.json()}).then(function(s){st=s;show()}).catch(function(){st=null;show()});
@@ -50,6 +59,11 @@ $("go").onclick=function(){
  fetch("/api/trekk/knapp",{method:"POST"}).then(function(r){if(!r.ok)$("msg").textContent="Kunne ikke trekke.";poll()}).catch(function(){$("msg").textContent="Ingen kontakt."});
  setTimeout(show,3100);
 };
+function post(b){return fetch("/api/trekk/ares",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify(b)}).then(function(r){if(!r.ok)$("msg").textContent="Kunne ikke endre.";poll()})}
+$("asave").onclick=function(){post({act:"range",from:$("af").value,to:$("at").value});$("asave").textContent="Lagret";setTimeout(function(){$("asave").textContent="Lagre antall"},1500)};
+var rt=null;$("areset").onclick=function(){
+ if(rt){clearTimeout(rt);rt=null;$("areset").textContent="Nullstill åresalg";post({act:"reset"});return}
+ $("areset").textContent="Sikker? Trykk igjen";rt=setTimeout(function(){rt=null;$("areset").textContent="Nullstill åresalg"},4000)};
 poll();setInterval(poll,800);
 })();
 </script>

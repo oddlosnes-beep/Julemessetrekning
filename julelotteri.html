@@ -407,7 +407,7 @@ var trUrl="";
 function pushTrekk(){
  if(view||location.protocol!=="http:"||!window.fetch)return;
  var on=!!($("mobdraw")&&$("mobdraw").checked),ps=$("psel"),o=ps&&ps.options[ps.selectedIndex];
- var b={on:on,busy:!!busy,left:pool(st.mode).length,num:$("num").textContent,info:$("info").textContent,title:st.title||"",prize:(!$("psel").hidden&&o?o.textContent:"")};
+ var b={on:on,busy:!!busy,left:pool(st.mode).length,num:$("num").textContent,info:$("info").textContent,title:st.title||"",mode:st.mode,aFrom:st.aFrom,aTo:st.aTo,prize:(!$("psel").hidden&&o?o.textContent:"")};
  try{fetch("/api/trekk/status",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify(b)}).catch(function(){})}catch(e){}
 }
 function sync(){if(view)return;pushTrekk();live();emitRoom("state",pack());toPop("state",pack());relay("state",pack());if(ch)ch.postMessage({t:"state",st:st,sel:sel,rolling:!!rolling})}
@@ -1205,6 +1205,10 @@ function srvStart(){
   srv.es.onmessage=function(ev){
    var m;try{m=JSON.parse(ev.data)}catch(e){return}
    if(m.cmd==="draw"){if($("mobdraw").checked&&!busy)draw();return}
+   if(m.cmd==="ares"){if(!$("mobdraw").checked||busy||st.mode!=="ares")return;
+    if(m.act==="reset"){st.round=(st.round||1)+1;sel=null;save();render()}
+    else if(m.act==="range"&&m.from>=0&&m.to>=m.from){st.aFrom=m.from;st.aTo=m.to;save();render()}
+    return}
    if(m.foto){srvFotos();return}
    if(!m.ops||m.cid===srv.cid)return;
    var S={tbl:st.tbl,cfg:{}},any=false;

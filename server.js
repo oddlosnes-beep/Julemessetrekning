@@ -329,12 +329,27 @@ const server = http.createServer(function (req, res) {
     broadcast({ cmd: "draw" });
     return json(res, 200, { ok: true });
   }
+  if (url === "/api/trekk/ares" && req.method === "POST") {
+    if (!lastTrekk.on || lastTrekk.mode !== "ares" || lastTrekk.busy) return json(res, 403, { error: "Ikke tilgjengelig nå" });
+    readBody(req, 2000).then(function (txt) {
+      let m; try { m = JSON.parse(txt); } catch (e) { return json(res, 400, { error: "ugyldig" }); }
+      if (m.act === "reset") broadcast({ cmd: "ares", act: "reset" });
+      else if (m.act === "range") {
+        const a = parseInt(m.from, 10), z = parseInt(m.to, 10);
+        if (isNaN(a) || isNaN(z) || a < 0 || z < a || z > 100000) return json(res, 400, { error: "ugyldig" });
+        lastTrekk.aFrom = a; lastTrekk.aTo = z;
+        broadcast({ cmd: "ares", act: "range", from: a, to: z });
+      } else return json(res, 400, { error: "ugyldig" });
+      json(res, 200, { ok: true });
+    }).catch(function () { json(res, 413, { error: "for stor" }); });
+    return;
+  }
   if (url === "/api/trekk/status" && req.method === "POST") {
     if (!isLocal(req)) return json(res, 403, { error: "Bare fra denne PC-en" });
     readBody(req, 20000).then(function (txt) {
       let m; try { m = JSON.parse(txt); } catch (e) { return json(res, 400, { error: "ugyldig" }); }
       const s = function (v) { return String(v == null ? "" : v).slice(0, 200); };
-      lastTrekk = { on: !!m.on, busy: !!m.busy, left: parseInt(m.left, 10) || 0, num: s(m.num), info: s(m.info), prize: s(m.prize), title: s(m.title) };
+      lastTrekk = { on: !!m.on, busy: !!m.busy, left: parseInt(m.left, 10) || 0, num: s(m.num), info: s(m.info), prize: s(m.prize), title: s(m.title), mode: s(m.mode), aFrom: parseInt(m.aFrom, 10) || 0, aTo: parseInt(m.aTo, 10) || 0 };
       json(res, 200, { ok: true });
     }).catch(function () { json(res, 413, { error: "for stor" }); });
     return;
