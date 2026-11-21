@@ -962,11 +962,19 @@ function popTest(){
  if(!pop)$("left").textContent="Nettleseren blokkerte det nye vinduet. Tillat popup-vinduer for denne siden og prøv igjen.";
  else{$("left").textContent="Prøvevindu åpnet (bare én skjerm). Trykk F eller dobbeltklikk i vinduet for fullskjerm, Esc for å gå tilbake.";setTimeout(sync,800)}
 }
+function popLabel(open){$("pop").textContent=open?"Lukk skjermvisning":"Åpne skjermvisning"}
+function popPoll(){
+ if(view||location.protocol!=="http:")return;
+ if(pop&&!pop.closed){popLabel(true);return}
+ fetch("/api/skjerm").then(function(r){return r.json()}).then(function(s){popLabel(!!s.open)}).catch(function(){});
+}
+if(!view)setInterval(popPoll,1500);
 $("pop").onclick=async function(){
+ if(pop&&!pop.closed){try{pop.close()}catch(e){}pop=null;popLabel(false);$("left").textContent="Prøvevinduet er lukket.";return}
  if(location.protocol==="http:"){
   try{
    var s0=await (await fetch("/api/skjerm")).json();
-   if(s0.open){await fetch("/api/skjerm/close",{method:"POST"});$("left").textContent="Skjermvisningen er lukket.";return}
+   if(s0.open){await fetch("/api/skjerm/close",{method:"POST"});popLabel(false);$("left").textContent="Skjermvisningen er lukket.";return}
    var scr=null;
    if(window.getScreenDetails){try{scr=await window.getScreenDetails()}catch(e){}}
    var x=null,y=null;
@@ -979,7 +987,7 @@ $("pop").onclick=async function(){
    }
    if(x!==null&&s0.chrome){
     var r=await fetch("/api/skjerm/open?x="+x+"&y="+y,{method:"POST"});
-    if(r.ok){$("left").textContent="Skjermvisningen åpnes i fullskjerm på skjerm 2. Trykk Esc i den for å lukke, eller trykk knappen igjen.";setTimeout(sync,1500);setTimeout(sync,3500);return}
+    if(r.ok){$("left").textContent="Skjermvisningen åpnes i fullskjerm på skjerm 2. Trykk Esc i den for å lukke, eller trykk knappen igjen.";popLabel(true);setTimeout(sync,1500);setTimeout(sync,3500);return}
    }
   }catch(e){}
  }
