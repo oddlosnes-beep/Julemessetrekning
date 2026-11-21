@@ -4,6 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>Julemessens lotteri</title>
+<link rel="icon" type="image/png" id="fav" href="/icon-trekning.png">
 <script src="/shared.js"></script>
 <script src="/qr.js"></script>
 <link href="https://fonts.googleapis.com/css2?family=Alfa+Slab+One&family=Nunito:wght@600;800&display=swap" rel="stylesheet">
@@ -430,7 +431,7 @@ function showStub(e){
  var pz=e&&!e.absent?(e.pt||(e.pi>=0&&st.prizes[e.pi]?st.prizes[e.pi]:"")):"";$("prize").textContent=pz?"Gevinst: "+pz:"";
  $("winner").textContent=e&&e.absent?"Ikke til stede":(e&&e.winner?"Vinner: "+e.winner:"");
 }
-function applyTitle(){document.documentElement.setAttribute("data-theme",st.theme||"klassisk");var t=(st.title||"").trim()||"Julemessens lotteri";document.querySelector("h1").textContent=t;document.title=t}
+function applyTitle(){document.documentElement.setAttribute("data-theme",st.theme||"klassisk");var t=(st.title||"").trim()||"Julemessens lotteri";document.querySelector("h1").textContent=t;document.title=view?t+" – skjermvisning":t+" – trekning";var fv=$("fav");if(fv)fv.href=view?"/icon-visning.png":"/icon-trekning.png"}
 function applyLocal(){
  var tb=document.querySelector('.tabs button[data-m="ticket"]'),bb=document.querySelector('.tabs button[data-m="book"]');
  tb.hidden=!!st.local;tb.textContent="Loddbøker: fortløpende";bb.textContent=st.local?"Loddbøker":"Loddbøker: bok";

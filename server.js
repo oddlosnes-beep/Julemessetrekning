@@ -62,8 +62,12 @@ const PAGES = {
   "/mobil": "mobil.html",
   "/mobil.html": "mobil.html",
   "/qr.js": "qr.js",
+  "/icon-trekning.png": "icon-trekning.png",
+  "/icon-registrering.png": "icon-registrering.png",
+  "/icon-visning.png": "icon-visning.png",
+  "/icon-mobil.png": "icon-mobil.png",
 };
-const TYPES = { ".html": "text/html; charset=utf-8", ".js": "text/javascript; charset=utf-8" };
+const TYPES = { ".html": "text/html; charset=utf-8", ".js": "text/javascript; charset=utf-8", ".png": "image/png" };
 
 // ---------- Tilstand (delt navneliste + innstillinger) ----------
 const FILE = path.join(DATA, "delt.json");
