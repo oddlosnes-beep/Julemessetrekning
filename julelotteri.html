@@ -213,6 +213,9 @@ html[data-theme=lys]{color-scheme:light;--bg:#f4efe4;--panel:#ffffff;--ink:#2630
 <button data-m="ares">Åresalg</button>
 </div>
 </div>
+<div id="arow" hidden style="display:none;gap:10px;align-items:center;flex-wrap:wrap;padding:6px 4px;font-weight:700">
+<span>Åresalg: lodd nr</span><input id="aFrom2" type="number" min="0" style="width:84px" aria-label="Fra nummer"><span>til</span><input id="aTo2" type="number" min="0" style="width:84px" aria-label="Til nummer">
+<button class="ghost" id="newround2">Nullstill åresalg</button></div>
 
 <div class="mid">
 <section class="ticket" aria-live="polite">
@@ -452,6 +455,7 @@ function applyLocal(){
 }
 function render(){
  markPrizes();
+ (function(){var on=!view&&st.mode==="ares";$("arow").style.display=on?"flex":"none";if(on){if(document.activeElement!==$("aFrom2"))$("aFrom2").value=st.aFrom;if(document.activeElement!==$("aTo2"))$("aTo2").value=st.aTo}})();
  applyTitle();if(!view)applyLocal();
  var m=st.mode,list=ofMode(m),e=sel?entry(sel):null;
  if(!e||e.mode!==m){e=list[list.length-1]||null;sel=e?e.id:null}
@@ -879,6 +883,9 @@ document.addEventListener("keydown",function(ev){if(ev.key==="Escape"&&!$("sdlg"
 $("more").onclick=function(){var h=!$("wtel").hidden;$("wtel").hidden=h;$("wadr").hidden=h;$("more").textContent=h?"Tlf og adresse":"Skjul tlf/adresse"};
 $("wtel").oninput=function(){var e=sel&&entry(sel);if(e){e.tel=$("wtel").value;save()}};
 $("wadr").oninput=function(){var e=sel&&entry(sel);if(e){e.adr=$("wadr").value;save()}};
+function aSet(){var a=parseInt($("aFrom2").value,10),z=parseInt($("aTo2").value,10);if(!isNaN(a)&&a>=0)st.aFrom=a;if(!isNaN(z)&&z>=st.aFrom)st.aTo=z;save();render()}
+$("aFrom2").onchange=aSet;$("aTo2").onchange=aSet;
+twoStep("newround2","Nullstill åresalg",function(){st.round=(st.round||1)+1;sel=null;save();render()},"Nullstille åresalget? Trykk igjen");
 twoStep("newround","Ny åresalgsrunde",function(){st.round=(st.round||1)+1;if(st.mode==="ares")sel=null;save();render()},"Starte ny runde? Trykk igjen");
 twoStep("resettab","Slett trekninger i denne fanen",function(){
  var m=st.mode;
