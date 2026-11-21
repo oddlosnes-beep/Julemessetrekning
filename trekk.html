@@ -39,7 +39,7 @@ button.s.r{color:var(--bad)}
 (function(){
 var $=function(i){return document.getElementById(i)},st=null,wait=0;
 function show(){
- if(!st){$("msg").textContent="Ingen kontakt med trekningen.";$("go").disabled=true;return}
+ if(!st){$("msg").textContent="Mistet kontakten. Prøver igjen… (sjekk at du er på samme wifi som PC-en)";$("go").disabled=true;return}
  $("t").textContent=st.title||"Trekning";
  $("prize").textContent=st.prize||"";
  $("num").textContent=st.busy?"…":(st.num||"?");
@@ -51,9 +51,15 @@ function show(){
  var ar=st.on&&st.mode==="ares";$("ar").hidden=!ar;
  if(ar){if(document.activeElement!==$("af"))$("af").value=st.aFrom;if(document.activeElement!==$("at"))$("at").value=st.aTo}
 }
+var inflight=false,fails=0;
 function poll(){
- fetch("/api/trekk").then(function(r){return r.json()}).then(function(s){st=s;show()}).catch(function(){st=null;show()});
+ if(inflight)return;inflight=true;
+ var ac=window.AbortController?new AbortController():null,tm=setTimeout(function(){if(ac)ac.abort()},3000);
+ fetch("/api/trekk",ac?{signal:ac.signal,cache:"no-store"}:{cache:"no-store"}).then(function(r){return r.json()}).then(function(s){fails=0;st=s;show()}).catch(function(){if(++fails>=2){st=null;show()}}).then(function(){clearTimeout(tm);inflight=false});
 }
+function wake(){try{if(navigator.wakeLock)navigator.wakeLock.request("screen").catch(function(){})}catch(e){}}
+document.addEventListener("visibilitychange",function(){if(!document.hidden){wake();poll()}});
+window.addEventListener("online",poll);wake();
 $("go").onclick=function(){
  $("go").disabled=true;wait=Date.now()+3000;
  fetch("/api/trekk/knapp",{method:"POST"}).then(function(r){if(!r.ok)$("msg").textContent="Kunne ikke trekke.";poll()}).catch(function(){$("msg").textContent="Ingen kontakt."});
