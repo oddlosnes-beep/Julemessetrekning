@@ -237,7 +237,6 @@ html[data-theme=lys]{color-scheme:light;--bg:#f4efe4;--panel:#ffffff;--ink:#2630
 </div>
 <div class="bgrp btools">
 <button class="ghost" id="srch">Søk</button>
-<button class="ghost" id="qrb">QR til mobil</button>
 <button class="ghost" id="set">Innstillinger</button>
 <span class="sep"></span>
 <button class="ghost" id="pop">Åpne skjermvisning</button>
@@ -394,7 +393,9 @@ var room=null;
 function emitRoom(t,d){if(room){try{room.emit(t,d).catch(function(){})}catch(e){}}}
 function pack(){var m=st.mode,pr={};var l=ofMode(m).map(function(d){if(d.pi>=0)pr[d.pi]=st.prizes[d.pi];return{id:d.id,n:d.n,k:d.k,pi:d.pi,pt:d.pt||"",ab:d.absent?1:0,winner:d.winner||""}});var p={title:st.title,theme:st.theme,local:st.local,m:m,start:st.start,per:st.per,books:st.books,aFrom:st.aFrom,aTo:st.aTo,l:l,pr:pr,sel:sel,rolling:!!rolling};while(JSON.stringify(p).length>3800&&p.l.length>1)p.l.shift();return p}
 function applyPack(p){st=Object.assign({},D,{title:p.title,theme:p.theme,local:p.local,mode:p.m,start:p.start,per:p.per,books:p.books,aFrom:p.aFrom,aTo:p.aTo,drawn:p.l.map(function(d){return{id:d.id,mode:p.m,n:d.n,k:d.k,pi:d.pi,pt:d.pt,absent:!!d.ab,winner:d.winner}}),prizes:Object.keys(p.pr).reduce(function(a,k){a[k]=p.pr[k];return a},[])});sel=p.sel;rolling=p.rolling?true:null;render()}
-function sync(){if(view)return;live();emitRoom("state",pack());toPop("state",pack());if(ch)ch.postMessage({t:"state",st:st,sel:sel,rolling:!!rolling})}
+var relayBusy=false;
+function relay(t,d){if(view||location.protocol!=="http:"||!window.fetch)return;if(t==="roll"&&relayBusy)return;relayBusy=true;try{fetch("/api/live",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({t:t,d:d})}).catch(function(){}).then(function(){relayBusy=false})}catch(e){relayBusy=false}}
+function sync(){if(view)return;live();emitRoom("state",pack());toPop("state",pack());relay("state",pack());if(ch)ch.postMessage({t:"state",st:st,sel:sel,rolling:!!rolling})}
 if(ch)ch.onmessage=function(ev){var m=ev.data;
  if(view){
   if(m.t==="state"){st=Object.assign({},D,m.st);sel=m.sel;rolling=m.rolling?true:null;render()}
@@ -490,7 +491,7 @@ function draw(){
    var bn=win,kk=null;if(m==="book"){bn=Math.floor(win/st.per)+1;kk=win%st.per+1}
    var e={id:st.nid++,mode:m,n:bn,k:kk,pi:pi,winner:lookup(m,bn,kk),tel:lookupX(m,bn,kk,"tel"),adr:lookupX(m,bn,kk,"adr"),t:Date.now(),rd:st.round||1,pt:(m==="ares"?carryPt:"")};
    st.drawn.push(e);sel=e.id;choice=-2;carryPt="";undone=null;$("redo").hidden=true;save();render();
-  }else{var v=p[rnd(p.length)];if(m==="book")v=Math.floor(v/st.per)+1;$("num").textContent=v;if(ch)ch.postMessage({t:"roll",n:v});emitRoom("roll",v);toPop("roll",v);live({num:v})}
+  }else{var v=p[rnd(p.length)];if(m==="book")v=Math.floor(v/st.per)+1;$("num").textContent=v;if(ch)ch.postMessage({t:"roll",n:v});emitRoom("roll",v);toPop("roll",v);relay("roll",v);live({num:v})}
  },reduce?0:70);
 }
 function num(id,min){var v=parseInt($(id).value,10);return isNaN(v)||v<min?null:v}
@@ -955,14 +956,47 @@ window.addEventListener("message",function(ev){var m=ev.data;if(!m||!m.jl)return
  else if(m.t==="hello"){pop=ev.source;sync()}
 });
 if(view&&window.opener){try{window.opener.postMessage({jl:1,t:"hello"},"*")}catch(e){}}
-$("pop").onclick=function(){
- try{pop=window.open(location.href.split("#")[0]+"#visning","jl_visning")}catch(e){pop=null}
+function popTest(){
+ var w=520,h=Math.round(w*9/16)+30,aw=window.screen.availWidth||1366,ah=window.screen.availHeight||768,al=window.screen.availLeft||0,at=window.screen.availTop||0;
+ try{pop=window.open(location.href.split("#")[0].split("?")[0]+"#visning","jl_visning","popup=yes,width="+w+",height="+h+",left="+Math.round(al+aw-w-16)+",top="+Math.round(at+ah-h-16))}catch(e){pop=null}
  if(!pop)$("left").textContent="Nettleseren blokkerte det nye vinduet. Tillat popup-vinduer for denne siden og prøv igjen.";
- else setTimeout(sync,800);
+ else{$("left").textContent="Prøvevindu åpnet (bare én skjerm). Trykk F eller dobbeltklikk i vinduet for fullskjerm, Esc for å gå tilbake.";setTimeout(sync,800)}
+}
+$("pop").onclick=async function(){
+ if(location.protocol==="http:"){
+  try{
+   var s0=await (await fetch("/api/skjerm")).json();
+   if(s0.open){await fetch("/api/skjerm/close",{method:"POST"});$("left").textContent="Skjermvisningen er lukket.";return}
+   var scr=null;
+   if(window.getScreenDetails){try{scr=await window.getScreenDetails()}catch(e){}}
+   var x=null,y=null;
+   if(scr&&scr.screens&&scr.screens.length>1){
+    var cur=scr.currentScreen,other=scr.screens.find(function(q){return !(cur&&q.left===cur.left&&q.top===cur.top)})||scr.screens.find(function(q){return !q.isPrimary});
+    if(other){x=Math.round(other.left+20);y=Math.round(other.top+20)}
+   }else if(!scr&&window.screen&&window.screen.isExtended){
+    var sw=window.screen.width||1920,ctr=window.screenX+(window.outerWidth||sw)/2,cl=Math.floor(ctr/sw)*sw;
+    x=cl+sw+100;y=Math.max(0,window.screenY)+50;
+   }
+   if(x!==null&&s0.chrome){
+    var r=await fetch("/api/skjerm/open?x="+x+"&y="+y,{method:"POST"});
+    if(r.ok){$("left").textContent="Skjermvisningen åpnes i fullskjerm på skjerm 2. Trykk Esc i den for å lukke, eller trykk knappen igjen.";setTimeout(sync,1500);setTimeout(sync,3500);return}
+   }
+  }catch(e){}
+ }
+ popTest();
 };
 var lastLive="";
 function pull(){try{var raw=localStorage.getItem(KEY+"-live");if(!raw||raw===lastLive)return;lastLive=raw;var m=JSON.parse(raw);st=Object.assign({},D,m.st);sel=m.sel;rolling=m.rolling?true:null;render();if(m.rolling&&m.num!=null)$("num").textContent=m.num}catch(e){}}
 if(view){setInterval(pull,150);window.addEventListener("storage",pull)}
+if(view&&location.protocol==="http:"&&window.EventSource&&window.fetch){
+ var kiosk=/[?&]kiosk=1/.test(location.search);
+ function gotLive(m){if(!m)return;if(m.t==="state"&&m.d)applyPack(m.d);else if(m.t==="roll")$("num").textContent=m.d}
+ fetch("/api/live").then(function(r){return r.json()}).then(gotLive).catch(function(){});
+ var vs=new EventSource("/api/events");
+ vs.onmessage=function(ev){var m;try{m=JSON.parse(ev.data)}catch(e){return}if(m.live)gotLive(m.live)};
+ vs.onopen=function(){fetch("/api/live").then(function(r){return r.json()}).then(gotLive).catch(function(){})};
+ if(kiosk)document.addEventListener("keydown",function(ev){if(ev.key==="Escape")fetch("/api/skjerm/close",{method:"POST"}).catch(function(){})});
+}
 
 // ===== Delt navneliste via Node-serveren (hvis siden åpnes fra serveren) =====
 var srv={on:false,cid:Math.random().toString(36).slice(2),q:[],busy:false,timer:null,saveT:null,cfgT:null,lastCfg:"",es:null};
@@ -1052,7 +1086,7 @@ function openQr(){
  var h=document.createElement("p");h.className="hint";h.textContent="Skann med mobilen (samme wifi som denne PC-en). Der kan man ta bilde av et ark og sende det hit. Bildene åpnes under «Bilder» på registreringssiden.";box.appendChild(h);
  draw();
 }
-$("qrb").onclick=openQr;
+
 $("qrclose").onclick=function(){$("qrdlg").hidden=true};
 $("qrdlg").addEventListener("mousedown",function(ev){if(ev.target===$("qrdlg"))$("qrdlg").hidden=true});
 document.addEventListener("keydown",function(ev){if(ev.key==="Escape"&&!$("qrdlg").hidden)$("qrdlg").hidden=true});

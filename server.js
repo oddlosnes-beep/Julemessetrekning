@@ -34,6 +34,40 @@ if (FLAG("--quiet")) {
   const put = function () { try { fs.appendFileSync(LOG, new Date().toISOString() + " " + Array.prototype.slice.call(arguments).join(" ") + "\n"); } catch (e) {} };
   console.log = put; console.error = put;
 }
+function findChrome() {
+  const e = process.env, pf = e["ProgramFiles"] || "C:\\Program Files", pf86 = e["ProgramFiles(x86)"] || "C:\\Program Files (x86)", la = e["LOCALAPPDATA"] || "";
+  const list = [
+    pf + "\\Google\\Chrome\\Application\\chrome.exe", pf86 + "\\Google\\Chrome\\Application\\chrome.exe", la + "\\Google\\Chrome\\Application\\chrome.exe",
+    pf86 + "\\Microsoft\\Edge\\Application\\msedge.exe", pf + "\\Microsoft\\Edge\\Application\\msedge.exe",
+  ];
+  for (let i = 0; i < list.length; i++) { try { if (fs.existsSync(list[i])) return list[i]; } catch (x) {} }
+  return process.platform === "win32" ? "" : (process.env.JL_CHROME || "");
+}
+let skjermProc = null, lastLive = null;
+function openSkjerm(x, y) {
+  closeSkjerm();
+  const chrome = findChrome();
+  if (!chrome) return false;
+  const prof = path.join(DATA, "skjerm-profil", String(Date.now()));
+  try { fs.rmSync(path.join(DATA, "skjerm-profil"), { recursive: true, force: true }); } catch (e) {}
+  const args = ["--kiosk", "--app=http://localhost:" + PORT + "/?kiosk=1#visning", "--user-data-dir=" + prof,
+    "--window-position=" + x + "," + y, "--no-first-run", "--no-default-browser-check", "--disable-infobars",
+    "--disable-session-crashed-bubble", "--disable-features=Translate"];
+  try {
+    const c = spawn(chrome, args, { detached: true, stdio: "ignore" });
+    c.on("error", function () { if (skjermProc === c) skjermProc = null; });
+    c.on("exit", function () { if (skjermProc === c) skjermProc = null; });
+    c.unref(); skjermProc = c; return true;
+  } catch (e) { return false; }
+}
+function closeSkjerm() {
+  const c = skjermProc; skjermProc = null;
+  if (!c) return;
+  try {
+    if (process.platform === "win32") spawn("taskkill", ["/PID", String(c.pid), "/T", "/F"], { stdio: "ignore", windowsHide: true }).on("error", function () {});
+    else c.kill();
+  } catch (e) {}
+}
 function openBrowser() {
   const url = "http://localhost:" + PORT;
   function go(cmd, args) {
@@ -41,14 +75,8 @@ function openBrowser() {
   }
   if (process.platform === "win32") {
     // Eget programvindu uten faner og adressefelt (Chrome eller Edge i app-modus), som i Sangvisning.
-    const e = process.env, pf = e["ProgramFiles"] || "C:\\Program Files", pf86 = e["ProgramFiles(x86)"] || "C:\\Program Files (x86)", la = e["LOCALAPPDATA"] || "";
-    const list = [
-      pf + "\\Google\\Chrome\\Application\\chrome.exe", pf86 + "\\Google\\Chrome\\Application\\chrome.exe", la + "\\Google\\Chrome\\Application\\chrome.exe",
-      pf86 + "\\Microsoft\\Edge\\Application\\msedge.exe", pf + "\\Microsoft\\Edge\\Application\\msedge.exe",
-    ];
-    for (let i = 0; i < list.length; i++) {
-      try { if (fs.existsSync(list[i]) && go(list[i], ["--app=" + url, "--start-maximized"])) return; } catch (x) {}
-    }
+    const ch = findChrome();
+    if (ch && go(ch, ["--app=" + url, "--start-maximized"])) return;
     go("explorer.exe", [url]);
   } else go(process.platform === "darwin" ? "open" : "xdg-open", [url]);
 }
@@ -291,6 +319,27 @@ const server = http.createServer(function (req, res) {
   if (req.method === "GET" && url === "/api/state") {
     return json(res, 200, { tbl: state.tbl, cfg: state.cfg, rev: state.rev });
   }
+  if (url.indexOf("/api/skjerm") === 0 || url === "/api/live") {
+    if (!isLocal(req)) return json(res, 403, { error: "Bare fra denne PC-en" });
+    if (url === "/api/live") {
+      if (req.method === "GET") return json(res, 200, lastLive || { t: "", d: null });
+      if (req.method === "POST") {
+        readBody(req, 2 * 1024 * 1024).then(function (txt) {
+          let m; try { m = JSON.parse(txt); } catch (e) { return json(res, 400, { error: "ugyldig" }); }
+          if (!m || (m.t !== "state" && m.t !== "roll")) return json(res, 400, { error: "ugyldig" });
+          if (m.t === "state") lastLive = m;
+          broadcast({ live: m }); json(res, 200, { ok: true });
+        }).catch(function () { json(res, 413, { error: "for stor" }); });
+        return;
+      }
+    }
+    if (url === "/api/skjerm" && req.method === "GET") return json(res, 200, { open: !!skjermProc, chrome: !!findChrome() });
+    if (url === "/api/skjerm/open" && req.method === "POST") {
+      const q = new URL(req.url, "http://x").searchParams, x = parseInt(q.get("x"), 10) || 0, y = parseInt(q.get("y"), 10) || 0;
+      return openSkjerm(x, y) ? json(res, 200, { ok: true }) : json(res, 400, { error: "Fant ikke Chrome eller Edge" });
+    }
+    if (url === "/api/skjerm/close" && req.method === "POST") { closeSkjerm(); return json(res, 200, { ok: true }); }
+  }
   if (url.indexOf("/api/update/") === 0 || url === "/api/version" || url === "/api/quit") {
     if (!isLocal(req)) return json(res, 403, { error: "Bare fra denne PC-en" });
     if (req.method === "POST" && url === "/api/quit") { json(res, 200, { ok: true }); setTimeout(bye, 300); return; }
@@ -423,7 +472,7 @@ server.listen(PORT, "0.0.0.0", function () {
   console.log("  Lukk dette vinduet (eller trykk Ctrl+C) for å stoppe.\n");
   if (FLAG("--open") && !FLAG("--wait")) openBrowser();
 });
-function bye() { flush(); backup(); process.exit(0); }
+function bye() { try { closeSkjerm(); } catch (e) {} flush(); backup(); process.exit(0); }
 process.on("SIGINT", bye);
 process.on("SIGTERM", bye);
 process.on("uncaughtException", function (e) { console.error("Uventet feil:", e); });
