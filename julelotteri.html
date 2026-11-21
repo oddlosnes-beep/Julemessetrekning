@@ -1235,6 +1235,7 @@ function srvStart(){
    if(i.version)$("verinfo").textContent="Versjon "+i.version;
    applyTabs();
    updCheck(false);
+   setInterval(function(){if(!busy)updCheck(false)},5*60*1000);
   }).catch(function(){});
   $("csvmsg").textContent="Serveren lagrer automatisk alle trekninger til data/trekninger.csv i programmappen. Du trenger ikke velge fil. «Last ned CSV» virker som før.";
  }).catch(function(){});
