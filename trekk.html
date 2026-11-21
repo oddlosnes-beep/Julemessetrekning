@@ -1,0 +1,57 @@
+<!DOCTYPE html>
+<html lang="nb">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Trekk</title>
+<link rel="icon" type="image/png" href="/icon-mobil.png">
+<style>
+:root{--ink:#1b2a24;--muted:#5a6a62;--acc:#14332a;--ok:#1d6b46;--bad:#b3262e}
+*{box-sizing:border-box}
+body{margin:0;min-height:100vh;display:flex;flex-direction:column;font-family:system-ui,Segoe UI,Arial,sans-serif;color:var(--ink);background:#eef2ef;text-align:center}
+header{background:var(--acc);color:#fff;padding:14px 16px;font-size:20px;font-weight:700}
+main{flex:1;display:flex;flex-direction:column;justify-content:center;padding:16px;gap:14px}
+#prize{font-size:20px;color:var(--muted)}
+#num{font-size:96px;font-weight:800;line-height:1}
+#info{font-size:22px;min-height:30px}
+button{font:inherit;font-weight:800;font-size:34px;padding:26px;border:0;border-radius:18px;background:var(--ok);color:#fff;width:100%}
+button:disabled{background:#9aa8a1}
+#msg{color:var(--bad);font-size:17px;min-height:22px}
+</style>
+</head>
+<body>
+<header id="t">Trekning</header>
+<main>
+<div id="prize"></div>
+<div id="num">?</div>
+<div id="info"></div>
+<button id="go" disabled>Trekk</button>
+<div id="msg"></div>
+</main>
+<script>
+(function(){
+var $=function(i){return document.getElementById(i)},st=null,wait=0;
+function show(){
+ if(!st){$("msg").textContent="Ingen kontakt med trekningen.";$("go").disabled=true;return}
+ $("t").textContent=st.title||"Trekning";
+ $("prize").textContent=st.prize||"";
+ $("num").textContent=st.busy?"…":(st.num||"?");
+ $("info").textContent=st.busy?"Trekker…":(st.info||"");
+ var ok=st.on&&!st.busy&&st.left>0&&Date.now()>wait;
+ $("go").disabled=!ok;
+ $("go").textContent=st.left===0?"Alt er trukket":"Trekk";
+ $("msg").textContent=st.on?"":"Trekking fra mobil er ikke slått på på PC-en.";
+}
+function poll(){
+ fetch("/api/trekk").then(function(r){return r.json()}).then(function(s){st=s;show()}).catch(function(){st=null;show()});
+}
+$("go").onclick=function(){
+ $("go").disabled=true;wait=Date.now()+3000;
+ fetch("/api/trekk/knapp",{method:"POST"}).then(function(r){if(!r.ok)$("msg").textContent="Kunne ikke trekke.";poll()}).catch(function(){$("msg").textContent="Ingen kontakt."});
+ setTimeout(show,3100);
+};
+poll();setInterval(poll,800);
+})();
+</script>
+</body>
+</html>

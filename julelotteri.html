@@ -320,6 +320,8 @@ html[data-theme=lys]{color-scheme:light;--bg:#f4efe4;--panel:#ffffff;--ink:#2630
 <div><p class="hint" style="margin:0">Skann med mobilen (samme wifi) for å sende bilde av et ark til PC-en.</p>
 <select id="srvsel" aria-label="Adresse i QR-koden" style="margin-top:6px;width:100%"></select>
 <p class="hint" id="srvfoto" style="margin-top:6px"></p></div></div>
+<div style="margin-top:14px;border-top:1px solid #d8dfdb;padding-top:10px"><label style="font-weight:700"><input type="checkbox" id="mobdraw"> Tillat trekking fra mobil</label>
+<div id="trbox" style="display:none;gap:12px;align-items:center;margin-top:8px"><div id="trqr" style="width:150px;height:150px;background:#fff;border-radius:8px;padding:4px;flex:none" aria-label="QR-kode til trekkesiden"></div><p class="hint" style="margin:0">Skann med mobilen. Den som skanner får bare en stor Trekk-knapp, og trekker her og på storskjermen.</p></div></div>
 </section>
 <section data-t="navn" class="card grow" id="ncard">
 <button class="ghost" id="nmax">⤢ Maksimer</button>
@@ -395,7 +397,14 @@ function pack(){var m=st.mode,pr={};var l=ofMode(m).map(function(d){if(d.pi>=0)p
 function applyPack(p){st=Object.assign({},D,{title:p.title,theme:p.theme,local:p.local,mode:p.m,start:p.start,per:p.per,books:p.books,aFrom:p.aFrom,aTo:p.aTo,drawn:p.l.map(function(d){return{id:d.id,mode:p.m,n:d.n,k:d.k,pi:d.pi,pt:d.pt,absent:!!d.ab,winner:d.winner}}),prizes:Object.keys(p.pr).reduce(function(a,k){a[k]=p.pr[k];return a},[])});sel=p.sel;rolling=p.rolling?true:null;render()}
 var relayBusy=false;
 function relay(t,d){if(view||location.protocol!=="http:"||!window.fetch)return;if(t==="roll"&&relayBusy)return;relayBusy=true;try{fetch("/api/live",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({t:t,d:d})}).catch(function(){}).then(function(){relayBusy=false})}catch(e){relayBusy=false}}
-function sync(){if(view)return;live();emitRoom("state",pack());toPop("state",pack());relay("state",pack());if(ch)ch.postMessage({t:"state",st:st,sel:sel,rolling:!!rolling})}
+var trUrl="";
+function pushTrekk(){
+ if(view||location.protocol!=="http:"||!window.fetch)return;
+ var on=!!($("mobdraw")&&$("mobdraw").checked),ps=$("psel"),o=ps&&ps.options[ps.selectedIndex];
+ var b={on:on,busy:!!busy,left:pool(st.mode).length,num:$("num").textContent,info:$("info").textContent,title:st.title||"",prize:(!$("psel").hidden&&o?o.textContent:"")};
+ try{fetch("/api/trekk/status",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify(b)}).catch(function(){})}catch(e){}
+}
+function sync(){if(view)return;pushTrekk();live();emitRoom("state",pack());toPop("state",pack());relay("state",pack());if(ch)ch.postMessage({t:"state",st:st,sel:sel,rolling:!!rolling})}
 if(ch)ch.onmessage=function(ev){var m=ev.data;
  if(view){
   if(m.t==="state"){st=Object.assign({},D,m.st);sel=m.sel;rolling=m.rolling?true:null;render()}
@@ -1179,6 +1188,7 @@ function srvStart(){
   srv.es.onerror=function(){srvChip("Delt liste: frakoblet, prøver igjen","bad")};
   srv.es.onmessage=function(ev){
    var m;try{m=JSON.parse(ev.data)}catch(e){return}
+   if(m.cmd==="draw"){if($("mobdraw").checked&&!busy)draw();return}
    if(m.foto){srvFotos();return}
    if(!m.ops||m.cid===srv.cid)return;
    var S={tbl:st.tbl,cfg:{}},any=false;
@@ -1196,7 +1206,9 @@ function srvStart(){
    var sel=$("srvsel");sel.innerHTML="";
    (i.urls||[]).forEach(function(u){var o=document.createElement("option");o.value=u+"/mobil";o.textContent=u+"/mobil";sel.appendChild(o)});
    function drawQr(){try{var qq=qrcode(0,"M");qq.addData(sel.value);qq.make();$("srvqr").innerHTML=qq.createSvgTag({cellSize:4,margin:0,scalable:true});var sv=$("srvqr").querySelector("svg");if(sv){sv.setAttribute("width","142");sv.setAttribute("height","142")}}catch(e){}}
-   sel.onchange=drawQr;if((i.urls||[]).length)drawQr();
+   sel.onchange=function(){drawQr();drawTr()};if((i.urls||[]).length)drawQr();
+   function drawTr(){try{var u=sel.value.replace(/\/mobil$/,"/trekk"),qq=qrcode(0,"M");qq.addData(u);qq.make();$("trqr").innerHTML=qq.createSvgTag({cellSize:4,margin:0,scalable:true});var sv=$("trqr").querySelector("svg");if(sv){sv.setAttribute("width","142");sv.setAttribute("height","142")}}catch(e){}}
+   $("mobdraw").onchange=function(){$("trbox").style.display=$("mobdraw").checked?"flex":"none";if($("mobdraw").checked)drawTr();pushTrekk()};
    srvFotos();
    if(!(i.urls||[]).length)box.textContent="Fant ingen nettverksadresse. Er PC-en koblet til nettverket?";
    $("srvcard").hidden=false;

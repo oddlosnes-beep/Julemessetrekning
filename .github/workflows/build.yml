@@ -32,7 +32,7 @@ jobs:
       - name: Sjekk at filene er med
         shell: pwsh
         run: |
-          foreach ($f in 'Julemessetrekning.exe','server.js','shared.js','julelotteri.html','registrer.html','mobil.html','qr.js','start.vbs','icon.ico','version.txt') {
+          foreach ($f in 'Julemessetrekning.exe','server.js','shared.js','julelotteri.html','registrer.html','mobil.html','trekk.html','qr.js','start.vbs','icon.ico','version.txt') {
             if (-not (Test-Path "publish\$f")) { throw "Mangler $f" }
           }
           .\publish\Julemessetrekning.exe --version

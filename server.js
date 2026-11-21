@@ -43,7 +43,7 @@ function findChrome() {
   for (let i = 0; i < list.length; i++) { try { if (fs.existsSync(list[i])) return list[i]; } catch (x) {} }
   return process.platform === "win32" ? "" : (process.env.JL_CHROME || "");
 }
-let skjermProc = null, lastLive = null;
+let skjermProc = null, lastLive = null, lastTrekk = { on: false }, lastTrekkAt = 0;
 function openSkjerm(x, y) {
   closeSkjerm();
   const chrome = findChrome();
@@ -89,6 +89,8 @@ const PAGES = {
   "/shared.js": "shared.js",
   "/mobil": "mobil.html",
   "/mobil.html": "mobil.html",
+  "/trekk": "trekk.html",
+  "/trekk.html": "trekk.html",
   "/qr.js": "qr.js",
   "/icon-trekning.png": "icon-trekning.png",
   "/icon-registrering.png": "icon-registrering.png",
@@ -286,7 +288,7 @@ async function runUpdate() {
       checkJs(rel, data); apply.push([rel, data]);
     });
     const names = apply.map(function (a) { return a[0]; });
-    ["server.js", "shared.js", "julelotteri.html", "registrer.html", "mobil.html", "version.txt"].forEach(function (f) { if (names.indexOf(f) < 0) throw new Error("Oppdateringen mangler " + f); });
+    ["server.js", "shared.js", "julelotteri.html", "registrer.html", "mobil.html", "trekk.html", "version.txt"].forEach(function (f) { if (names.indexOf(f) < 0) throw new Error("Oppdateringen mangler " + f); });
     upd.stage = "Bytter filer";
     const bk = path.join(BACKUP, "program-" + VERSION.replace(/[^\w.-]/g, "_"));
     fs.mkdirSync(bk, { recursive: true });
@@ -318,6 +320,24 @@ const server = http.createServer(function (req, res) {
   }
   if (req.method === "GET" && url === "/api/state") {
     return json(res, 200, { tbl: state.tbl, cfg: state.cfg, rev: state.rev });
+  }
+  if (url === "/api/trekk" && req.method === "GET") { const t = Object.assign({}, lastTrekk); return json(res, 200, t); }
+  if (url === "/api/trekk/knapp" && req.method === "POST") {
+    if (!lastTrekk.on || lastTrekk.busy || !(lastTrekk.left > 0)) return json(res, 403, { error: "Trekking fra mobil er ikke tilgjengelig nå" });
+    if (Date.now() - lastTrekkAt < 3000) return json(res, 429, { error: "Vent litt" });
+    lastTrekkAt = Date.now(); lastTrekk.busy = true;
+    broadcast({ cmd: "draw" });
+    return json(res, 200, { ok: true });
+  }
+  if (url === "/api/trekk/status" && req.method === "POST") {
+    if (!isLocal(req)) return json(res, 403, { error: "Bare fra denne PC-en" });
+    readBody(req, 20000).then(function (txt) {
+      let m; try { m = JSON.parse(txt); } catch (e) { return json(res, 400, { error: "ugyldig" }); }
+      const s = function (v) { return String(v == null ? "" : v).slice(0, 200); };
+      lastTrekk = { on: !!m.on, busy: !!m.busy, left: parseInt(m.left, 10) || 0, num: s(m.num), info: s(m.info), prize: s(m.prize), title: s(m.title) };
+      json(res, 200, { ok: true });
+    }).catch(function () { json(res, 413, { error: "for stor" }); });
+    return;
   }
   if (url.indexOf("/api/skjerm") === 0 || url === "/api/live") {
     if (!isLocal(req)) return json(res, 403, { error: "Bare fra denne PC-en" });
